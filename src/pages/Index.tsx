@@ -19,9 +19,9 @@ const Index = () => {
   const [chores, setChores] = useState<Chore[]>([]);
   const [householdProfiles, setHouseholdProfiles] = useState<Profile[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { user, profile, isParent, isLoading: authLoading } = useAuth();
+  const { user, profile, isParent, signOut, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect to auth if not logged in
@@ -41,6 +41,7 @@ const Index = () => {
 
   const fetchChores = async () => {
     if (!profile?.household_id) return;
+    setIsLoading(true);
     
     try {
       const { data, error } = await supabase
@@ -232,8 +233,33 @@ const Index = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <div className="w-full max-w-sm rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
+          <h1 className="text-lg font-semibold">Finishing setup…</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your account is signed in, but your household profile hasn’t been created yet. This usually happens after an early signup hiccup.
+          </p>
+          <div className="mt-4 flex items-center gap-3">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Retrying automatically</span>
+          </div>
+          <div className="mt-6 flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                await signOut();
+                navigate('/auth');
+              }}
+            >
+              Sign out
+            </Button>
+            <Button
+              onClick={() => window.location.reload()}
+            >
+              Reload
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
