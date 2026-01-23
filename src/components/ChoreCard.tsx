@@ -86,8 +86,11 @@ export function ChoreCard({
             )}>
               <RewardIcon className="w-4 h-4" />
               <span>
-                {chore.reward.type === 'cash' && '$'}
-                {chore.reward.value} {chore.reward.unit}
+                {chore.reward.type === 'cash' && `$${chore.reward.value}`}
+                {chore.reward.type === 'tv' && `${chore.reward.value} ${chore.reward.unit}`}
+                {(chore.reward.type === 'playdate' || chore.reward.type === 'treat') && (
+                  chore.reward.unit || rewardLabels[chore.reward.type]
+                )}
               </span>
             </div>
           </div>
