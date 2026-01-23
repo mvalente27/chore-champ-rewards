@@ -14,11 +14,20 @@ interface AddChoreModalProps {
   onAdd: (chore: Omit<Chore, 'id' | 'isCompleted'>) => void;
 }
 
-const rewardTypes: { type: RewardType; icon: typeof DollarSign; label: string; unit: string }[] = [
-  { type: 'cash', icon: DollarSign, label: 'Cash', unit: '' },
-  { type: 'tv', icon: Tv, label: 'TV Time', unit: 'min' },
-  { type: 'playdate', icon: Users, label: 'Play Date', unit: 'hr' },
-  { type: 'treat', icon: Cookie, label: 'Treat', unit: '' },
+type RewardInputType = 'numeric' | 'text';
+
+const rewardTypes: { 
+  type: RewardType; 
+  icon: typeof DollarSign; 
+  label: string; 
+  unit: string;
+  inputType: RewardInputType;
+  placeholder: string;
+}[] = [
+  { type: 'cash', icon: DollarSign, label: 'Cash', unit: '$', inputType: 'numeric', placeholder: '5.00' },
+  { type: 'tv', icon: Tv, label: 'Screen Time', unit: 'min', inputType: 'numeric', placeholder: '30' },
+  { type: 'playdate', icon: Users, label: 'Play Date', unit: '', inputType: 'text', placeholder: 'e.g., With Jake on Saturday' },
+  { type: 'treat', icon: Cookie, label: 'Treat', unit: '', inputType: 'text', placeholder: 'e.g., Ice cream, Cookie' },
 ];
 
 const choreEmojis = ['🧹', '🍽️', '🛏️', '🐕', '📚', '🧺', '🗑️', '🌱', '🚗', '🧽'];
@@ -30,21 +39,25 @@ export function AddChoreModal({ open, onClose, onAdd }: AddChoreModalProps) {
   const [description, setDescription] = useState('');
   const [selectedReward, setSelectedReward] = useState<RewardType>('cash');
   const [rewardValue, setRewardValue] = useState('');
+  const [rewardText, setRewardText] = useState('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
   const [selectedEmoji, setSelectedEmoji] = useState('🧹');
 
+  const currentRewardConfig = rewardTypes.find(r => r.type === selectedReward)!;
+  const isTextReward = currentRewardConfig.inputType === 'text';
+
   const handleSubmit = () => {
-    if (!title || !rewardValue) return;
-    
-    const rewardConfig = rewardTypes.find(r => r.type === selectedReward)!;
+    if (!title) return;
+    if (isTextReward && !rewardText.trim()) return;
+    if (!isTextReward && !rewardValue) return;
     
     onAdd({
       title,
       description,
       reward: {
         type: selectedReward,
-        value: parseFloat(rewardValue),
-        unit: rewardConfig.unit,
+        value: isTextReward ? 0 : parseFloat(rewardValue),
+        unit: isTextReward ? rewardText.trim() : currentRewardConfig.unit,
       },
       difficulty,
       icon: selectedEmoji,
@@ -54,11 +67,21 @@ export function AddChoreModal({ open, onClose, onAdd }: AddChoreModalProps) {
     setTitle('');
     setDescription('');
     setRewardValue('');
+    setRewardText('');
     setSelectedReward('cash');
     setDifficulty('easy');
     setSelectedEmoji('🧹');
     onClose();
   };
+
+  const handleRewardTypeChange = (type: RewardType) => {
+    setSelectedReward(type);
+    // Clear values when switching types
+    setRewardValue('');
+    setRewardText('');
+  };
+
+  const isFormValid = title && (isTextReward ? rewardText.trim() : rewardValue);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -122,7 +145,7 @@ export function AddChoreModal({ open, onClose, onAdd }: AddChoreModalProps) {
                 return (
                   <button
                     key={reward.type}
-                    onClick={() => setSelectedReward(reward.type)}
+                    onClick={() => handleRewardTypeChange(reward.type)}
                     className={cn(
                       "flex flex-col items-center gap-1 p-3 rounded-xl transition-all",
                       selectedReward === reward.type
@@ -139,18 +162,37 @@ export function AddChoreModal({ open, onClose, onAdd }: AddChoreModalProps) {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="value">
-              Reward Amount {rewardTypes.find(r => r.type === selectedReward)?.unit && 
-                `(${rewardTypes.find(r => r.type === selectedReward)?.unit})`}
-            </Label>
-            <Input 
-              id="value"
-              type="number"
-              placeholder={selectedReward === 'cash' ? '5.00' : '30'}
-              value={rewardValue}
-              onChange={(e) => setRewardValue(e.target.value)}
-              className="h-12 rounded-xl"
-            />
+            {isTextReward ? (
+              <>
+                <Label htmlFor="rewardText">
+                  {selectedReward === 'playdate' ? 'Play Date Details' : 'What Treat?'}
+                </Label>
+                <Input 
+                  id="rewardText"
+                  type="text"
+                  placeholder={currentRewardConfig.placeholder}
+                  value={rewardText}
+                  onChange={(e) => setRewardText(e.target.value)}
+                  className="h-12 rounded-xl"
+                />
+              </>
+            ) : (
+              <>
+                <Label htmlFor="value">
+                  Reward Amount {currentRewardConfig.unit && `(${currentRewardConfig.unit})`}
+                </Label>
+                <Input 
+                  id="value"
+                  type="number"
+                  min="0"
+                  step={selectedReward === 'cash' ? '0.01' : '1'}
+                  placeholder={currentRewardConfig.placeholder}
+                  value={rewardValue}
+                  onChange={(e) => setRewardValue(e.target.value)}
+                  className="h-12 rounded-xl"
+                />
+              </>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -182,7 +224,7 @@ export function AddChoreModal({ open, onClose, onAdd }: AddChoreModalProps) {
           <Button variant="outline" onClick={onClose} className="flex-1">
             Cancel
           </Button>
-          <Button variant="hero" onClick={handleSubmit} className="flex-1" disabled={!title || !rewardValue}>
+          <Button variant="hero" onClick={handleSubmit} className="flex-1" disabled={!isFormValid}>
             Add Chore
           </Button>
         </div>
