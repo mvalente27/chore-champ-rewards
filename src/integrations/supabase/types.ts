@@ -195,6 +195,83 @@ export type Database = {
           },
         ]
       }
+      redemptions: {
+        Row: {
+          cost: number
+          created_at: string
+          fulfilled_at: string | null
+          fulfilled_by: string | null
+          id: string
+          profile_id: string
+          reward_id: string
+          status: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          profile_id: string
+          reward_id: string
+          status?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          profile_id?: string
+          reward_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          cost: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          household_id: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          household_id: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          household_id?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -237,6 +314,10 @@ export type Database = {
       is_parent_of_household: {
         Args: { _household_id: string }
         Returns: boolean
+      }
+      redeem_reward: {
+        Args: { p_profile_id: string; p_reward_id: string }
+        Returns: string
       }
     }
     Enums: {
