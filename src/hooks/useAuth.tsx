@@ -103,9 +103,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: authError };
       }
 
-      if (authData.user) {
+      // Wait for the session to be established
+      if (authData.user && authData.session) {
+        // Session is immediately available (auto-confirm enabled)
         // Create household and profile atomically
-        // First create household
         const { data: householdData, error: householdError } = await supabase
           .from('households')
           .insert({ name: `${name}'s Family` })
@@ -113,6 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .single();
 
         if (householdError) {
+          console.error('Household creation error:', householdError);
           return { error: householdError };
         }
 
@@ -127,12 +129,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
 
         if (profileError) {
+          console.error('Profile creation error:', profileError);
           return { error: profileError };
         }
+
+        // Fetch the profile to update state
+        await fetchProfile(authData.user.id);
+      } else if (authData.user && !authData.session) {
+        // Email confirmation required - inform user
+        return { error: new Error('Please check your email to confirm your account before signing in.') };
       }
 
       return { error: null };
     } catch (err) {
+      console.error('Signup error:', err);
       return { error: err as Error };
     }
   };
