@@ -195,6 +195,84 @@ export type Database = {
           },
         ]
       }
+      quiz_attempts: {
+        Row: {
+          attempted_at: string
+          id: string
+          is_correct: boolean
+          points_earned: number
+          profile_id: string
+          question_id: string
+          selected_answer: number
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          is_correct: boolean
+          points_earned?: number
+          profile_id: string
+          question_id: string
+          selected_answer: number
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          is_correct?: boolean
+          points_earned?: number
+          profile_id?: string
+          question_id?: string
+          selected_answer?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_attempts_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          category: string
+          correct_answer: number
+          created_at: string
+          difficulty: string
+          id: string
+          options: Json
+          points: number
+          question: string
+        }
+        Insert: {
+          category?: string
+          correct_answer: number
+          created_at?: string
+          difficulty?: string
+          id?: string
+          options: Json
+          points?: number
+          question: string
+        }
+        Update: {
+          category?: string
+          correct_answer?: number
+          created_at?: string
+          difficulty?: string
+          id?: string
+          options?: Json
+          points?: number
+          question?: string
+        }
+        Relationships: []
+      }
       redemptions: {
         Row: {
           cost: number
