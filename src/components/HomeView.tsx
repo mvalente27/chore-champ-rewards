@@ -1,7 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { EarningsCard } from '@/components/EarningsCard';
 import { StatsGrid } from '@/components/StatsGrid';
 import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Brain, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -33,6 +34,8 @@ export function HomeView({
   pendingApproval,
   onAddKid,
 }: HomeViewProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       {/* Role Badge */}
@@ -61,6 +64,21 @@ export function HomeView({
         currentStreak={5}
         totalStars={completedToday * 2}
       />
+
+      {/* Quiz Banner */}
+      <button
+        onClick={() => navigate('/quiz')}
+        className="w-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3 hover:from-primary/15 hover:to-accent/15 transition-all"
+      >
+        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+          <Brain className="w-5 h-5 text-primary" />
+        </div>
+        <div className="flex-1 text-left">
+          <p className="font-semibold text-foreground">Money Quiz</p>
+          <p className="text-sm text-muted-foreground">Learn & earn bonus points!</p>
+        </div>
+        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+      </button>
 
       {/* Pending Approvals Banner for Parents */}
       {isParent && pendingApproval > 0 && (
