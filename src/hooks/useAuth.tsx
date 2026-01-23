@@ -106,31 +106,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Wait for the session to be established
       if (authData.user && authData.session) {
         // Session is immediately available (auto-confirm enabled)
-        // Create household and profile atomically
-        const { data: householdData, error: householdError } = await supabase
-          .from('households')
-          .insert({ name: `${name}'s Family` })
-          .select()
-          .single();
-
-        if (householdError) {
-          console.error('Household creation error:', householdError);
-          return { error: householdError };
-        }
-
-        // Then create parent profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: authData.user.id,
-            household_id: householdData.id,
-            name: name,
-            type: 'parent',
+        // Create household and profile atomically via secure RPC
+        const { error: rpcError } = await supabase
+          .rpc('create_household_with_parent_profile', {
+            parent_name: name,
           });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          return { error: profileError };
+        if (rpcError) {
+          console.error('Household/profile creation error:', rpcError);
+          return { error: rpcError };
         }
 
         // Fetch the profile to update state

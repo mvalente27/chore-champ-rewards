@@ -200,6 +200,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_household_with_parent_profile: {
+        Args: { household_name?: string; parent_name: string }
+        Returns: {
+          household_id: string
+          profile_id: string
+        }[]
+      }
       get_current_household_id: { Args: never; Returns: string }
       get_current_profile: {
         Args: never
