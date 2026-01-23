@@ -6,6 +6,7 @@ import { ChoreCard } from '@/components/ChoreCard';
 import { EarningsCard } from '@/components/EarningsCard';
 import { StatsGrid } from '@/components/StatsGrid';
 import { AddChoreModal } from '@/components/AddChoreModal';
+import { EditChoreModal } from '@/components/EditChoreModal';
 import { AddKidModal } from '@/components/AddKidModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Sparkles, Loader2, UserPlus } from 'lucide-react';
@@ -20,6 +21,8 @@ const Index = () => {
   const [chores, setChores] = useState<Chore[]>([]);
   const [householdProfiles, setHouseholdProfiles] = useState<Profile[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingChore, setEditingChore] = useState<Chore | null>(null);
   const [isAddKidModalOpen, setIsAddKidModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -238,6 +241,66 @@ const Index = () => {
     }
   };
 
+  const handleEditChore = (legacyChore: LegacyChore) => {
+    // Find the original database chore
+    const dbChore = chores.find(c => c.id === legacyChore.id);
+    if (dbChore) {
+      setEditingChore(dbChore);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveChore = async (updatedChore: LegacyChore) => {
+    if (!profile?.household_id) return;
+
+    try {
+      const { error } = await supabase
+        .from('chores')
+        .update({
+          title: updatedChore.title,
+          description: updatedChore.description,
+          reward_value: updatedChore.reward.type === 'cash' ? updatedChore.reward.value : 0,
+          icon: updatedChore.icon,
+        })
+        .eq('id', updatedChore.id);
+
+      if (error) throw error;
+
+      setChores(chores.map(c => 
+        c.id === updatedChore.id 
+          ? { 
+              ...c, 
+              title: updatedChore.title,
+              description: updatedChore.description,
+              reward_value: updatedChore.reward.type === 'cash' ? updatedChore.reward.value : 0,
+              icon: updatedChore.icon,
+            }
+          : c
+      ));
+      toast.success('Chore updated! ✏️');
+    } catch (err) {
+      console.error('Error updating chore:', err);
+      toast.error('Failed to update chore');
+    }
+  };
+
+  const handleDeleteChore = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('chores')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setChores(chores.filter(c => c.id !== id));
+      toast.success('Chore deleted');
+    } catch (err) {
+      console.error('Error deleting chore:', err);
+      toast.error('Failed to delete chore');
+    }
+  };
+
   // Convert database chores to legacy format for ChoreCard
   const convertToLegacyChore = (chore: Chore): LegacyChore => ({
     id: chore.id,
@@ -417,6 +480,7 @@ const Index = () => {
                   onClaim={handleClaimChore}
                   onComplete={handleCompleteChore}
                   onApprove={isParent ? handleApproveChore : undefined}
+                  onEdit={isParent ? handleEditChore : undefined}
                   isKidView={!isParent}
                   choreStatus={chore.status}
                 />
@@ -438,6 +502,17 @@ const Index = () => {
         open={isAddKidModalOpen}
         onClose={() => setIsAddKidModalOpen(false)}
         onAdd={handleAddKid}
+      />
+
+      <EditChoreModal
+        open={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingChore(null);
+        }}
+        onSave={handleSaveChore}
+        onDelete={handleDeleteChore}
+        chore={editingChore ? convertToLegacyChore(editingChore) : null}
       />
     </div>
   );

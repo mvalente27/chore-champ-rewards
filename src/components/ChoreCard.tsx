@@ -1,7 +1,7 @@
 import { Chore } from '@/types/chores';
 import { ChoreStatus } from '@/types/database';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Tv, Users, Cookie, Sparkles, Check, Clock, CheckCircle2 } from 'lucide-react';
+import { DollarSign, Tv, Users, Cookie, Sparkles, Check, Clock, CheckCircle2, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChoreCardProps {
@@ -9,6 +9,7 @@ interface ChoreCardProps {
   onClaim: (id: string) => void;
   onComplete: (id: string) => void;
   onApprove?: (id: string) => void;
+  onEdit?: (chore: Chore) => void;
   isKidView?: boolean;
   choreStatus?: ChoreStatus;
 }
@@ -45,6 +46,7 @@ export function ChoreCard({
   onClaim, 
   onComplete, 
   onApprove,
+  onEdit,
   isKidView = false,
   choreStatus = 'available'
 }: ChoreCardProps) {
@@ -55,12 +57,22 @@ export function ChoreCard({
   return (
     <div 
       className={cn(
-        "bg-card rounded-2xl p-5 shadow-card border border-border/50 transition-all duration-300 hover:shadow-float hover:-translate-y-1",
+        "relative bg-card rounded-2xl p-5 shadow-card border border-border/50 transition-all duration-300 hover:shadow-float hover:-translate-y-1",
         choreStatus === 'completed' && "opacity-75"
       )}
     >
       <div className="flex items-start gap-4">
         <div className="text-4xl">{chore.icon}</div>
+        
+        {/* Edit button for parents */}
+        {!isKidView && onEdit && choreStatus !== 'completed' && (
+          <button
+            onClick={() => onEdit(chore)}
+            className="absolute top-3 right-3 p-2 rounded-lg bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        )}
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
