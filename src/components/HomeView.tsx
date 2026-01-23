@@ -1,0 +1,113 @@
+import { EarningsCard } from '@/components/EarningsCard';
+import { StatsGrid } from '@/components/StatsGrid';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Profile {
+  id: string;
+  user_id?: string | null;
+  household_id: string;
+  name: string;
+  type: 'parent' | 'kid';
+  avatar_url: string | null;
+  total_earnings: number;
+}
+
+interface HomeViewProps {
+  profile: Profile;
+  isParent: boolean;
+  householdProfiles: Profile[];
+  completedToday: number;
+  pendingChores: number;
+  pendingApproval: number;
+  onAddKid: () => void;
+}
+
+export function HomeView({
+  profile,
+  isParent,
+  householdProfiles,
+  completedToday,
+  pendingChores,
+  pendingApproval,
+  onAddKid,
+}: HomeViewProps) {
+  return (
+    <div className="space-y-6">
+      {/* Role Badge */}
+      <div className="flex items-center justify-center">
+        <div className={`px-4 py-1.5 rounded-full text-sm font-medium ${
+          isParent 
+            ? 'bg-primary/10 text-primary' 
+            : 'bg-secondary/50 text-secondary-foreground'
+        }`}>
+          {isParent ? '👨‍👩‍👧 Parent Dashboard' : '⭐ Kid Dashboard'}
+        </div>
+      </div>
+
+      {/* Earnings Card */}
+      <EarningsCard 
+        totalEarnings={profile.total_earnings}
+        weeklyEarnings={0}
+        savingsGoal={100}
+        onInvest={() => toast.info('Savings goal feature coming soon! 📈')}
+      />
+      
+      {/* Stats Grid */}
+      <StatsGrid 
+        completedToday={completedToday}
+        pendingChores={pendingChores}
+        currentStreak={5}
+        totalStars={completedToday * 2}
+      />
+
+      {/* Pending Approvals Banner for Parents */}
+      {isParent && pendingApproval > 0 && (
+        <div className="bg-accent/20 border border-accent/30 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-2xl">⏳</span>
+          <div>
+            <p className="font-semibold text-foreground">{pendingApproval} chore{pendingApproval > 1 ? 's' : ''} waiting for approval</p>
+            <p className="text-sm text-muted-foreground">Review and approve completed chores</p>
+          </div>
+        </div>
+      )}
+
+      {/* Kids in Household - Parent View */}
+      {isParent && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-foreground">Kids</h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onAddKid}
+            >
+              <UserPlus className="w-4 h-4" />
+              Add Kid
+            </Button>
+          </div>
+          {householdProfiles.filter(p => p.type === 'kid').length === 0 ? (
+            <div className="text-center py-8 bg-muted/30 rounded-xl">
+              <span className="text-3xl mb-2 block">👨‍👩‍👧</span>
+              <p className="text-muted-foreground text-sm">No kids added yet</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {householdProfiles.filter(p => p.type === 'kid').map((kid) => (
+                <div 
+                  key={kid.id}
+                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-full"
+                >
+                  <span className="text-xl">{kid.avatar_url || '👧'}</span>
+                  <span className="font-medium text-sm">{kid.name}</span>
+                  <span className="text-xs text-muted-foreground">${kid.total_earnings}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
