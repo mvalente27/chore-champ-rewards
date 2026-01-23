@@ -62,7 +62,7 @@ export function AddChoreModal({ open, onClose, onAdd }: AddChoreModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-4 rounded-2xl">
+      <DialogContent className="max-w-md mx-4 rounded-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="w-5 h-5 text-primary" />
