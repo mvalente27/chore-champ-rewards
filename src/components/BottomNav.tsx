@@ -1,4 +1,4 @@
-import { Home, ListTodo, ClipboardCheck, Trophy, User } from 'lucide-react';
+import { Home, ListTodo, ClipboardCheck, Trophy, User, Wallet } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,9 +16,9 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'chores', icon: ListTodo, label: 'Chores', path: '/' },
+    ...(isParent ? [{ id: 'wallet', icon: Wallet, label: 'Wallet', path: '/wallet' }] : []),
     ...(isParent ? [{ id: 'approvals', icon: ClipboardCheck, label: 'Approvals', path: '/approvals' }] : []),
     { id: 'rewards', icon: Trophy, label: 'Rewards', path: '/rewards' },
-    { id: 'profile', icon: User, label: 'Profile', path: '/' },
   ];
 
   const handleClick = (item: typeof navItems[0]) => {

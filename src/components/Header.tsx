@@ -2,7 +2,7 @@ import { Bell, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
-  userName: string;
+  userName?: string;
   userAvatar?: string;
 }
 
@@ -16,7 +16,7 @@ export function Header({ userName, userAvatar }: HeaderProps) {
           </div>
           <div>
             <p className="text-sm text-muted-foreground font-medium">Welcome back,</p>
-            <h1 className="text-lg font-bold text-foreground">{userName}</h1>
+            <h1 className="text-lg font-bold text-foreground">{userName || 'Friend'}</h1>
           </div>
         </div>
         
