@@ -151,6 +151,85 @@ export type Database = {
         }
         Relationships: []
       }
+      investments: {
+        Row: {
+          current_price: number
+          id: string
+          profile_id: string
+          purchase_price: number
+          purchased_at: string
+          shares: number
+          stock_name: string
+          stock_symbol: string
+          theme: string | null
+        }
+        Insert: {
+          current_price: number
+          id?: string
+          profile_id: string
+          purchase_price: number
+          purchased_at?: string
+          shares: number
+          stock_name: string
+          stock_symbol: string
+          theme?: string | null
+        }
+        Update: {
+          current_price?: number
+          id?: string
+          profile_id?: string
+          purchase_price?: number
+          purchased_at?: string
+          shares?: number
+          stock_name?: string
+          stock_symbol?: string
+          theme?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          profile_id: string
+          stripe_customer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          profile_id: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          profile_id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_wallets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -350,6 +429,98 @@ export type Database = {
         }
         Relationships: []
       }
+      savings_goals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_amount: number
+          icon: string | null
+          id: string
+          is_completed: boolean
+          name: string
+          profile_id: string
+          target_amount: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          is_completed?: boolean
+          name: string
+          profile_id: string
+          target_amount: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          is_completed?: boolean
+          name?: string
+          profile_id?: string
+          target_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_goals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          recipient_profile_id: string | null
+          stripe_payment_intent_id: string | null
+          type: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          recipient_profile_id?: string | null
+          stripe_payment_intent_id?: string | null
+          type: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          recipient_profile_id?: string | null
+          stripe_payment_intent_id?: string | null
+          type?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "parent_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -395,6 +566,14 @@ export type Database = {
       }
       redeem_reward: {
         Args: { p_profile_id: string; p_reward_id: string }
+        Returns: string
+      }
+      transfer_to_kid: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_kid_profile_id: string
+        }
         Returns: string
       }
     }
