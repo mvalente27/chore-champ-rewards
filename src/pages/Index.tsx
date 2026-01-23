@@ -6,8 +6,9 @@ import { ChoreCard } from '@/components/ChoreCard';
 import { EarningsCard } from '@/components/EarningsCard';
 import { StatsGrid } from '@/components/StatsGrid';
 import { AddChoreModal } from '@/components/AddChoreModal';
+import { AddKidModal } from '@/components/AddKidModal';
 import { Button } from '@/components/ui/button';
-import { Plus, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Sparkles, Loader2, UserPlus } from 'lucide-react';
 import { Chore as LegacyChore } from '@/types/chores';
 import { Chore, Profile, ChoreStatus } from '@/types/database';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ const Index = () => {
   const [chores, setChores] = useState<Chore[]>([]);
   const [householdProfiles, setHouseholdProfiles] = useState<Profile[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddKidModalOpen, setIsAddKidModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const { user, profile, isParent, signOut, isLoading: authLoading } = useAuth();
@@ -210,6 +212,32 @@ const Index = () => {
     }
   };
 
+  const handleAddKid = async (name: string, avatar: string) => {
+    if (!profile?.household_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          household_id: profile.household_id,
+          name: name,
+          type: 'kid',
+          avatar_url: avatar,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setHouseholdProfiles([...householdProfiles, data]);
+      toast.success(`${name} has been added to your household! 🎉`);
+    } catch (err) {
+      console.error('Error adding kid:', err);
+      toast.error('Failed to add kid');
+      throw err;
+    }
+  };
+
   // Convert database chores to legacy format for ChoreCard
   const convertToLegacyChore = (chore: Chore): LegacyChore => ({
     id: chore.id,
@@ -318,6 +346,42 @@ const Index = () => {
             </div>
           </div>
         )}
+
+        {/* Kids in Household - Parent View */}
+        {isParent && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground">Kids</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setIsAddKidModalOpen(true)}
+              >
+                <UserPlus className="w-4 h-4" />
+                Add Kid
+              </Button>
+            </div>
+            {householdProfiles.filter(p => p.type === 'kid').length === 0 ? (
+              <div className="text-center py-8 bg-muted/30 rounded-xl">
+                <span className="text-3xl mb-2 block">👨‍👩‍👧</span>
+                <p className="text-muted-foreground text-sm">No kids added yet</p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {householdProfiles.filter(p => p.type === 'kid').map((kid) => (
+                  <div 
+                    key={kid.id}
+                    className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-full"
+                  >
+                    <span className="text-xl">{kid.avatar_url || '👧'}</span>
+                    <span className="font-medium text-sm">{kid.name}</span>
+                    <span className="text-xs text-muted-foreground">${kid.total_earnings}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Chores Section */}
         <div className="space-y-4">
@@ -368,6 +432,12 @@ const Index = () => {
         open={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddChore}
+      />
+
+      <AddKidModal
+        open={isAddKidModalOpen}
+        onClose={() => setIsAddKidModalOpen(false)}
+        onAdd={handleAddKid}
       />
     </div>
   );
