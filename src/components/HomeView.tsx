@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { EarningsCard } from '@/components/EarningsCard';
 import { StatsGrid } from '@/components/StatsGrid';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Brain, ChevronRight } from 'lucide-react';
+import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -23,6 +23,7 @@ interface HomeViewProps {
   pendingChores: number;
   pendingApproval: number;
   onAddKid: () => void;
+  onSetupKidLogin?: (kid: Profile) => void;
 }
 
 export function HomeView({
@@ -33,8 +34,11 @@ export function HomeView({
   pendingChores,
   pendingApproval,
   onAddKid,
+  onSetupKidLogin,
 }: HomeViewProps) {
   const navigate = useNavigate();
+
+  const kids = householdProfiles.filter(p => p.type === 'kid');
 
   return (
     <div className="space-y-6">
@@ -105,23 +109,44 @@ export function HomeView({
               Add Kid
             </Button>
           </div>
-          {householdProfiles.filter(p => p.type === 'kid').length === 0 ? (
+          {kids.length === 0 ? (
             <div className="text-center py-8 bg-muted/30 rounded-xl">
               <span className="text-3xl mb-2 block">👨‍👩‍👧</span>
               <p className="text-muted-foreground text-sm">No kids added yet</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {householdProfiles.filter(p => p.type === 'kid').map((kid) => (
-                <div 
-                  key={kid.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-full"
-                >
-                  <span className="text-xl">{kid.avatar_url || '👧'}</span>
-                  <span className="font-medium text-sm">{kid.name}</span>
-                  <span className="text-xs text-muted-foreground">${kid.total_earnings}</span>
-                </div>
-              ))}
+            <div className="space-y-2">
+              {kids.map((kid) => {
+                const hasLogin = !!kid.user_id;
+                return (
+                  <div 
+                    key={kid.id}
+                    className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50"
+                  >
+                    <span className="text-2xl">{kid.avatar_url || '👧'}</span>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">{kid.name}</p>
+                      <p className="text-xs text-muted-foreground">${kid.total_earnings} earned</p>
+                    </div>
+                    {hasLogin ? (
+                      <div className="flex items-center gap-1 text-xs text-green-600 bg-green-500/10 px-2 py-1 rounded-full">
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Can login</span>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onSetupKidLogin?.(kid)}
+                        className="text-xs"
+                      >
+                        <KeyRound className="w-3 h-3 mr-1" />
+                        Setup Login
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

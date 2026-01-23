@@ -8,6 +8,7 @@ import { ProfileView } from '@/components/ProfileView';
 import { AddChoreModal } from '@/components/AddChoreModal';
 import { EditChoreModal } from '@/components/EditChoreModal';
 import { AddKidModal } from '@/components/AddKidModal';
+import { SetupKidLoginModal } from '@/components/SetupKidLoginModal';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Chore as LegacyChore } from '@/types/chores';
 import { Chore, Profile, ChoreStatus } from '@/types/database';
@@ -23,6 +24,13 @@ const Index = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
   const [isAddKidModalOpen, setIsAddKidModalOpen] = useState(false);
+  const [isSetupLoginModalOpen, setIsSetupLoginModalOpen] = useState(false);
+  const [selectedKidForLogin, setSelectedKidForLogin] = useState<{
+    id: string;
+    name: string;
+    avatar_url: string | null;
+    user_id?: string | null;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { user, profile, isParent, signOut, isLoading: authLoading } = useAuth();
@@ -376,6 +384,10 @@ const Index = () => {
             pendingChores={pendingChores}
             pendingApproval={pendingApproval}
             onAddKid={() => setIsAddKidModalOpen(true)}
+            onSetupKidLogin={(kid) => {
+              setSelectedKidForLogin(kid);
+              setIsSetupLoginModalOpen(true);
+            }}
           />
         );
       case 'chores':
@@ -411,6 +423,10 @@ const Index = () => {
             pendingChores={pendingChores}
             pendingApproval={pendingApproval}
             onAddKid={() => setIsAddKidModalOpen(true)}
+            onSetupKidLogin={(kid) => {
+              setSelectedKidForLogin(kid);
+              setIsSetupLoginModalOpen(true);
+            }}
           />
         );
     }
@@ -450,6 +466,18 @@ const Index = () => {
         onSave={handleSaveChore}
         onDelete={handleDeleteChore}
         chore={editingChore ? convertToLegacyChore(editingChore) : null}
+      />
+
+      <SetupKidLoginModal
+        open={isSetupLoginModalOpen}
+        onClose={() => {
+          setIsSetupLoginModalOpen(false);
+          setSelectedKidForLogin(null);
+        }}
+        kid={selectedKidForLogin}
+        onSuccess={() => {
+          fetchProfiles();
+        }}
       />
     </div>
   );
