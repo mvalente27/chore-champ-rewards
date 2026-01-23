@@ -14,16 +14,232 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chores: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          household_id: string
+          icon: string | null
+          id: string
+          reward_value: number
+          status: Database["public"]["Enums"]["chore_status"]
+          title: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          household_id: string
+          icon?: string | null
+          id?: string
+          reward_value?: number
+          status?: Database["public"]["Enums"]["chore_status"]
+          title: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          household_id?: string
+          icon?: string | null
+          id?: string
+          reward_value?: number
+          status?: Database["public"]["Enums"]["chore_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chores_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chores_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chores_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      earnings: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          chore_id: string | null
+          created_at: string
+          id: string
+          profile_id: string
+          status: Database["public"]["Enums"]["earning_status"]
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          chore_id?: string | null
+          created_at?: string
+          id?: string
+          profile_id: string
+          status?: Database["public"]["Enums"]["earning_status"]
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          chore_id?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string
+          status?: Database["public"]["Enums"]["earning_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnings_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnings_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "earnings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          household_id: string
+          id: string
+          name: string
+          total_earnings: number
+          type: Database["public"]["Enums"]["profile_type"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          name: string
+          total_earnings?: number
+          type?: Database["public"]["Enums"]["profile_type"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          name?: string
+          total_earnings?: number
+          type?: Database["public"]["Enums"]["profile_type"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_household_id: { Args: never; Returns: string }
+      get_current_profile: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          household_id: string
+          id: string
+          name: string
+          total_earnings: number
+          type: Database["public"]["Enums"]["profile_type"]
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_current_profile_id: { Args: never; Returns: string }
+      is_member_of_household: {
+        Args: { _household_id: string }
+        Returns: boolean
+      }
+      is_parent: { Args: never; Returns: boolean }
+      is_parent_of_household: {
+        Args: { _household_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      chore_status:
+        | "available"
+        | "claimed"
+        | "pending_verification"
+        | "completed"
+      earning_status: "pending" | "approved" | "rejected"
+      profile_type: "parent" | "kid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +366,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      chore_status: [
+        "available",
+        "claimed",
+        "pending_verification",
+        "completed",
+      ],
+      earning_status: ["pending", "approved", "rejected"],
+      profile_type: ["parent", "kid"],
+    },
   },
 } as const
