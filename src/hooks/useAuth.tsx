@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,12 +31,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Prevent repeated provisioning attempts if a user exists without a profile
+  const provisioningAttemptedRef = useRef(false);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        // Reset provisioning attempt on sign-out
+        if (!session?.user) {
+          provisioningAttemptedRef.current = false;
+        }
         
         // Defer profile fetch to avoid deadlock
         if (session?.user) {
@@ -62,6 +70,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const provisionMissingProfile = async (u: User) => {
+    if (provisioningAttemptedRef.current) return;
+    provisioningAttemptedRef.current = true;
+
+    // Best-effort: use metadata name, otherwise derive from email
+    const fallbackName = (u.email?.split('@')[0] || 'Parent').replace(/[._-]+/g, ' ').trim();
+    const parentName = (typeof u.user_metadata?.name === 'string' && u.user_metadata.name.trim().length >= 2)
+      ? u.user_metadata.name.trim()
+      : (fallbackName.length >= 2 ? fallbackName : 'Parent');
+
+    const { error: rpcError } = await supabase.rpc('create_household_with_parent_profile', {
+      parent_name: parentName,
+    });
+
+    if (rpcError) {
+      console.error('Auto-provision profile failed:', rpcError);
+    }
+  };
+
   const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -77,6 +104,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (data) {
         setProfile(data as Profile);
+        return;
+      }
+
+      // If the user exists but has no profile row (common after a failed early signup),
+      // attempt a one-time self-heal by creating household + parent profile.
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      if (currentUser?.id === userId) {
+        await provisionMissingProfile(currentUser);
+
+        const { data: repairedProfile, error: repairedError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (!repairedError && repairedProfile) {
+          setProfile(repairedProfile as Profile);
+        }
       }
     } catch (err) {
       console.error('Profile fetch error:', err);
