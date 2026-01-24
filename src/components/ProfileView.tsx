@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { LogOut, User, DollarSign, Calendar } from 'lucide-react';
+import { LogOut, User, Coins, Calendar } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -38,10 +38,10 @@ export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-card rounded-xl p-4 border border-border/50">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <DollarSign className="w-4 h-4" />
-            <span className="text-sm">Total Earnings</span>
+            <Coins className="w-4 h-4" />
+            <span className="text-sm">Quest Coins</span>
           </div>
-          <p className="text-2xl font-bold text-foreground">${profile.total_earnings}</p>
+          <p className="text-2xl font-bold text-foreground">🪙 {profile.total_earnings}</p>
         </div>
         <div className="bg-card rounded-xl p-4 border border-border/50">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
