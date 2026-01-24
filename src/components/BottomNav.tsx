@@ -22,10 +22,12 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   ];
 
   const handleClick = (item: typeof navItems[0]) => {
+    // Always update the tab state first
     if (onTabChange) {
       onTabChange(item.id);
     }
-    if (item.path !== location.pathname) {
+    // Only navigate if path is different AND it's not an in-page tab switch
+    if (item.path !== location.pathname && item.path !== '/') {
       navigate(item.path);
     }
   };
