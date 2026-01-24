@@ -1,4 +1,4 @@
-import { Home, ListTodo, ClipboardCheck, Trophy, User, Wallet } from 'lucide-react';
+import { Home, ListTodo, ClipboardCheck, Trophy, User, Wallet, History } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'chores', icon: ListTodo, label: 'Chores', path: '/' },
     ...(isParent ? [{ id: 'wallet', icon: Wallet, label: 'Wallet', path: '/wallet' }] : []),
+    { id: 'history', icon: History, label: 'History', path: '/history' },
     { id: 'rewards', icon: Trophy, label: 'Rewards', path: '/rewards' },
     { id: 'profile', icon: User, label: 'Profile', path: '/' },
   ];
@@ -40,10 +41,15 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   };
 
   const isActive = (item: typeof navItems[0]) => {
+    // For non-index pages, check pathname match
+    if (item.path !== '/') {
+      return location.pathname === item.path;
+    }
+    // For index page tabs, use activeTab state
     if (activeTab) {
       return activeTab === item.id;
     }
-    return location.pathname === item.path;
+    return location.pathname === '/' && item.id === 'home';
   };
 
   return (

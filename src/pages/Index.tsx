@@ -139,44 +139,31 @@ const Index = () => {
     if (!chore) return;
 
     try {
-      // Update chore status to completed (auto-approve)
+      // Update chore status to pending_verification (requires parent approval)
       const { error: choreError } = await supabase
         .from('chores')
         .update({ 
-          status: 'completed' as ChoreStatus,
+          status: 'pending_verification' as ChoreStatus,
           completed_at: new Date().toISOString()
         })
         .eq('id', id);
 
       if (choreError) throw choreError;
 
-      // Create earning record (auto-approved)
-      const { error: earningError } = await supabase
-        .from('earnings')
-        .insert({
-          profile_id: profile.id,
-          chore_id: id,
-          amount: chore.reward_value,
-          status: 'approved',
-          approved_at: new Date().toISOString()
-        });
-
-      if (earningError) throw earningError;
-
       // Update local chore state
       setChores(chores.map(c => 
-        c.id === id ? { ...c, status: 'completed' as ChoreStatus, completed_at: new Date().toISOString() } : c
+        c.id === id ? { ...c, status: 'pending_verification' as ChoreStatus, completed_at: new Date().toISOString() } : c
       ));
 
       toast.success(
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🪙</span>
-          <span>Chore complete! +{chore.reward_value} Quest Coins earned! 🎉</span>
+          <span className="text-2xl">📝</span>
+          <span><strong>{chore.title}</strong> submitted! Waiting for parent approval.</span>
         </div>
       );
     } catch (err) {
       console.error('Error completing chore:', err);
-      toast.error('Failed to complete chore');
+      toast.error('Failed to submit chore');
     }
   };
 
@@ -195,25 +182,37 @@ const Index = () => {
 
       if (choreError) throw choreError;
 
-      // Create earning record
-      const { error: earningError } = await supabase
+      // Create earning record with pending status first
+      const { data: earningData, error: earningInsertError } = await supabase
         .from('earnings')
         .insert({
           profile_id: chore.assigned_to,
           chore_id: id,
           amount: chore.reward_value,
+          status: 'pending'
+        })
+        .select('id')
+        .single();
+
+      if (earningInsertError) throw earningInsertError;
+
+      // Update to approved to trigger the total_earnings update
+      const { error: earningUpdateError } = await supabase
+        .from('earnings')
+        .update({
           status: 'approved',
           approved_by: profile.id,
           approved_at: new Date().toISOString()
-        });
+        })
+        .eq('id', earningData.id);
 
-      if (earningError) throw earningError;
+      if (earningUpdateError) throw earningUpdateError;
 
       setChores(chores.map(c => 
         c.id === id ? { ...c, status: 'completed' as ChoreStatus } : c
       ));
 
-      toast.success('Chore approved! Reward added! 💰');
+      toast.success(`Chore approved! +${chore.reward_value} Quest Coins added! 🪙`);
     } catch (err) {
       console.error('Error approving chore:', err);
       toast.error('Failed to approve chore');
