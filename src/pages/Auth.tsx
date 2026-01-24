@@ -15,16 +15,18 @@ const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').max(20);
+const familyCodeSchema = z.string().length(6, 'Family code must be 6 characters');
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginType, setLoginType] = useState<'parent' | 'kid'>('parent');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [familyCode, setFamilyCode] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; username?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; username?: string; familyCode?: string }>({});
 
   const { signIn, signUp, user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -36,7 +38,7 @@ const Auth = () => {
   }, [user, isLoading, navigate]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; name?: string; username?: string } = {};
+    const newErrors: { email?: string; password?: string; name?: string; username?: string; familyCode?: string } = {};
 
     if (loginType === 'parent') {
       const emailResult = emailSchema.safeParse(email);
@@ -47,6 +49,10 @@ const Auth = () => {
       const usernameResult = usernameSchema.safeParse(username);
       if (!usernameResult.success) {
         newErrors.username = usernameResult.error.errors[0].message;
+      }
+      const familyCodeResult = familyCodeSchema.safeParse(familyCode);
+      if (!familyCodeResult.success) {
+        newErrors.familyCode = familyCodeResult.error.errors[0].message;
       }
     }
 
@@ -102,15 +108,16 @@ const Auth = () => {
 
     try {
       if (loginType === 'kid') {
-        // Kid login with username
-        // We need to find the fake email associated with this username
-        // For now, we'll use a lookup edge function
+        // Kid login with username + family code
         const { data: lookupData, error: lookupError } = await supabase.functions.invoke('lookup-kid-login', {
-          body: { username: username.toLowerCase() },
+          body: { 
+            username: username.toLowerCase(),
+            familyCode: familyCode.toUpperCase(),
+          },
         });
 
         if (lookupError || !lookupData?.email) {
-          toast.error('Username not found. Please check and try again.');
+          toast.error('Username or family code not found. Please check and try again.');
           return;
         }
 
@@ -244,20 +251,39 @@ const Auth = () => {
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="your_username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                  disabled={isSubmitting}
-                />
-                {errors.username && (
-                  <p className="text-sm text-destructive">{errors.username}</p>
-                )}
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="familyCode">Family Code</Label>
+                  <Input
+                    id="familyCode"
+                    type="text"
+                    placeholder="ABC123"
+                    value={familyCode}
+                    onChange={(e) => setFamilyCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+                    disabled={isSubmitting}
+                    maxLength={6}
+                    className="uppercase tracking-widest text-center font-mono"
+                  />
+                  {errors.familyCode && (
+                    <p className="text-sm text-destructive">{errors.familyCode}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">Ask your parent for the family code</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="your_username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    disabled={isSubmitting}
+                  />
+                  {errors.username && (
+                    <p className="text-sm text-destructive">{errors.username}</p>
+                  )}
+                </div>
+              </>
             )}
 
             <div className="space-y-2">
@@ -305,7 +331,7 @@ const Auth = () => {
       <p className="text-xs text-muted-foreground mt-6 text-center max-w-xs">
         {loginType === 'parent' 
           ? 'Parents sign up first, then add kids from the dashboard'
-          : 'Ask your parent for your username and password'
+          : 'Ask your parent for your family code, username, and password'
         }
       </p>
     </div>

@@ -70,9 +70,13 @@ export function SetupKidLoginModal({ open, onClose, kid, onSuccess }: SetupKidLo
         <div>
           <p className="font-medium">Login created for {kid.name}!</p>
           <p className="text-sm text-muted-foreground mt-1">
+            Family Code: <strong className="font-mono">{data.familyCode}</strong>
+          </p>
+          <p className="text-sm text-muted-foreground">
             Username: <strong>{username.toLowerCase()}</strong>
           </p>
-        </div>
+        </div>,
+        { duration: 10000 } // Show longer so parent can note it down
       );
       onSuccess();
       handleClose();
@@ -171,7 +175,7 @@ export function SetupKidLoginModal({ open, onClose, kid, onSuccess }: SetupKidLo
           <div className="bg-muted/50 rounded-lg p-3 text-sm">
             <p className="font-medium text-foreground mb-1">📝 Remember these credentials!</p>
             <p className="text-muted-foreground">
-              Write down the username and password so {kid.name} can use them to log in.
+              After creating, you'll receive a <strong>Family Code</strong>. Write it down along with the username and password so {kid.name} can log in.
             </p>
           </div>
 

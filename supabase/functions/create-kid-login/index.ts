@@ -12,6 +12,12 @@ interface CreateKidLoginRequest {
   password: string;
 }
 
+// Generate a 6-character family code from household ID
+function generateFamilyCode(householdId: string): string {
+  // Take first 6 alphanumeric characters, uppercase for readability
+  return householdId.replace(/-/g, '').slice(0, 6).toUpperCase();
+}
+
 // Convert username to a fake email for Supabase Auth
 function usernameToEmail(username: string, householdId: string): string {
   // Create a deterministic fake email from username + household
@@ -108,6 +114,9 @@ serve(async (req) => {
       );
     }
 
+    // Generate family code from household ID
+    const familyCode = generateFamilyCode(parentProfile.household_id);
+
     // Create the auth user for the kid
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: fakeEmail,
@@ -117,6 +126,7 @@ serve(async (req) => {
         name: kidProfile.name,
         profile_type: "kid",
         username: username,
+        family_code: familyCode,
       },
     });
 
@@ -149,7 +159,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: `Login credentials created for ${kidProfile.name}`,
-        username 
+        username,
+        familyCode,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
