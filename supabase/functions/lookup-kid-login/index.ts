@@ -8,6 +8,7 @@ const corsHeaders = {
 
 interface LookupRequest {
   username: string;
+  familyCode: string;
 }
 
 serve(async (req) => {
@@ -20,7 +21,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { username }: LookupRequest = await req.json();
+    const { username, familyCode }: LookupRequest = await req.json();
 
     if (!username || username.length < 3) {
       return new Response(
@@ -29,7 +30,14 @@ serve(async (req) => {
       );
     }
 
-    // Search for users with this username in their metadata
+    if (!familyCode || familyCode.length !== 6) {
+      return new Response(
+        JSON.stringify({ error: "Invalid family code" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Search for users with this username AND family code in their metadata
     const { data: users, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
@@ -40,14 +48,16 @@ serve(async (req) => {
       );
     }
 
-    // Find the user with matching username in metadata
+    // Find the user with matching username AND family code in metadata
     const matchingUser = users.users.find(
-      (u) => u.user_metadata?.username?.toLowerCase() === username.toLowerCase()
+      (u) => 
+        u.user_metadata?.username?.toLowerCase() === username.toLowerCase() &&
+        u.user_metadata?.family_code?.toUpperCase() === familyCode.toUpperCase()
     );
 
     if (!matchingUser) {
       return new Response(
-        JSON.stringify({ error: "Username not found" }),
+        JSON.stringify({ error: "Username or family code not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
