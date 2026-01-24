@@ -188,7 +188,7 @@ const Rewards = () => {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-4 overflow-hidden">
             {rewards.map((reward) => {
               const canAfford = !isParent && (profile?.total_earnings || 0) >= reward.cost;
               const isRedeeming = redeemingId === reward.id;
@@ -196,15 +196,15 @@ const Rewards = () => {
               return (
                 <div
                   key={reward.id}
-                  className="bg-card border rounded-xl p-3 sm:p-4 flex items-center gap-3"
+                  className="bg-card border rounded-xl p-3 sm:p-4 flex items-center gap-3 overflow-hidden"
                 >
                   <div className="w-10 h-10 sm:w-14 sm:h-14 bg-muted/50 rounded-xl flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0">
                     {reward.icon}
                   </div>
-                  <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{reward.name}</h3>
                     {reward.description && (
-                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{reward.description}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">{reward.description}</p>
                     )}
                     <div className="flex items-center gap-1 text-sm sm:text-lg font-bold text-amber-600 mt-1">
                       <Coins className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -215,7 +215,7 @@ const Rewards = () => {
                         href={reward.purchase_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-xs text-primary flex items-center gap-1 mt-1 hover:underline"
+                        className="text-xs text-primary flex items-center gap-1 mt-1 hover:underline max-w-full"
                       >
                         <ExternalLink className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">Buy (${reward.purchase_price?.toFixed(2) || 'View'})</span>
