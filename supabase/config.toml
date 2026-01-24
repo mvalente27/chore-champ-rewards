@@ -2,3 +2,6 @@ project_id = "cyadvsspkrxmsydeyyvd"
 
 [functions.create-kid-login]
 verify_jwt = false
+
+[functions.lookup-kid-login]
+verify_jwt = false

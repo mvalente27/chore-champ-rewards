@@ -8,8 +8,16 @@ const corsHeaders = {
 
 interface CreateKidLoginRequest {
   kidProfileId: string;
-  email: string;
+  username: string;
   password: string;
+}
+
+// Convert username to a fake email for Supabase Auth
+function usernameToEmail(username: string, householdId: string): string {
+  // Create a deterministic fake email from username + household
+  // Format: username@household-short.chorequest.local
+  const shortHouseholdId = householdId.slice(0, 8);
+  return `${username}@${shortHouseholdId}.chorequest.local`;
 }
 
 serve(async (req) => {
@@ -51,7 +59,16 @@ serve(async (req) => {
       );
     }
 
-    const { kidProfileId, email, password }: CreateKidLoginRequest = await req.json();
+    const { kidProfileId, username, password }: CreateKidLoginRequest = await req.json();
+
+    // Validate username
+    const usernameRegex = /^[a-z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      return new Response(
+        JSON.stringify({ error: "Username must be 3-20 lowercase letters, numbers, or underscores" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Verify the kid profile exists and belongs to the same household
     const { data: kidProfile, error: kidError } = await supabaseAdmin
@@ -76,14 +93,30 @@ serve(async (req) => {
       );
     }
 
+    // Generate the fake email from username
+    const fakeEmail = usernameToEmail(username, parentProfile.household_id);
+
+    // Check if username is already taken in this household
+    // We do this by checking if the email already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const emailTaken = existingUsers?.users?.some(u => u.email === fakeEmail);
+    
+    if (emailTaken) {
+      return new Response(
+        JSON.stringify({ error: "This username is already taken" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Create the auth user for the kid
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: fakeEmail,
       password,
       email_confirm: true, // Auto-confirm for kids
       user_metadata: {
         name: kidProfile.name,
         profile_type: "kid",
+        username: username,
       },
     });
 
@@ -110,11 +143,13 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Created kid login: ${username} for profile ${kidProfileId}`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: `Login credentials created for ${kidProfile.name}`,
-        email 
+        username 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
