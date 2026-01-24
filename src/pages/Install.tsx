@@ -16,9 +16,11 @@ const Install = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Detect platform
+    // Detect platform - iPad Safari now often reports as Mac, so also check for touch
     const ua = navigator.userAgent;
-    setIsIOS(/iPad|iPhone|iPod/.test(ua));
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) || 
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setIsIOS(isIOSDevice);
     setIsAndroid(/Android/.test(ua));
 
     // Check if already installed
