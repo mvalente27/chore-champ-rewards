@@ -755,7 +755,7 @@ export type Database = {
         }
         Returns: string
       }
-      update_stock_prices: { Args: never; Returns: undefined }
+      update_stock_prices: { Args: never; Returns: Json }
     }
     Enums: {
       chore_status:
