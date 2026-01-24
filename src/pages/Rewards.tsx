@@ -196,19 +196,19 @@ const Rewards = () => {
               return (
                 <div
                   key={reward.id}
-                  className="bg-card border rounded-xl p-4 flex items-center gap-4"
+                  className="bg-card border rounded-xl p-3 sm:p-4 flex items-center gap-3"
                 >
-                  <div className="w-14 h-14 bg-muted/50 rounded-xl flex items-center justify-center text-3xl">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 bg-muted/50 rounded-xl flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0">
                     {reward.icon}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{reward.name}</h3>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{reward.name}</h3>
                     {reward.description && (
-                      <p className="text-sm text-muted-foreground truncate">{reward.description}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{reward.description}</p>
                     )}
-                    <div className="flex items-center gap-1 text-lg font-bold text-amber-600 mt-1">
-                      <Coins className="w-4 h-4" />
-                      {reward.cost}
+                    <div className="flex items-center gap-1 text-sm sm:text-lg font-bold text-amber-600 mt-1">
+                      <Coins className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span>{reward.cost}</span>
                     </div>
                     {reward.is_purchasable && reward.purchase_url && isParent && (
                       <a 
@@ -217,8 +217,8 @@ const Rewards = () => {
                         rel="noopener noreferrer"
                         className="text-xs text-primary flex items-center gap-1 mt-1 hover:underline"
                       >
-                        <ExternalLink className="w-3 h-3" />
-                        Buy (${reward.purchase_price?.toFixed(2) || 'View'})
+                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate">Buy (${reward.purchase_price?.toFixed(2) || 'View'})</span>
                       </a>
                     )}
                   </div>
@@ -228,13 +228,14 @@ const Rewards = () => {
                       variant={canAfford ? 'default' : 'outline'}
                       disabled={!canAfford || isRedeeming}
                       onClick={() => handleRedeem(reward)}
+                      className="flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3"
                     >
                       {isRedeeming ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          <ShoppingCart className="w-4 h-4" />
-                          {canAfford ? 'Get' : 'Need more'}
+                          <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="hidden xs:inline ml-1">{canAfford ? 'Get' : 'Need more'}</span>
                         </>
                       )}
                     </Button>
