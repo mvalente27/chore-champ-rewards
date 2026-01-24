@@ -126,24 +126,39 @@ const Index = () => {
     if (!chore) return;
 
     try {
-      const { error } = await supabase
+      // Update chore status to completed (auto-approve)
+      const { error: choreError } = await supabase
         .from('chores')
         .update({ 
-          status: 'pending_verification' as ChoreStatus,
+          status: 'completed' as ChoreStatus,
           completed_at: new Date().toISOString()
         })
         .eq('id', id);
 
-      if (error) throw error;
+      if (choreError) throw choreError;
 
+      // Create earning record (auto-approved)
+      const { error: earningError } = await supabase
+        .from('earnings')
+        .insert({
+          profile_id: profile.id,
+          chore_id: id,
+          amount: chore.reward_value,
+          status: 'approved',
+          approved_at: new Date().toISOString()
+        });
+
+      if (earningError) throw earningError;
+
+      // Update local chore state
       setChores(chores.map(c => 
-        c.id === id ? { ...c, status: 'pending_verification' as ChoreStatus, completed_at: new Date().toISOString() } : c
+        c.id === id ? { ...c, status: 'completed' as ChoreStatus, completed_at: new Date().toISOString() } : c
       ));
 
       toast.success(
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <span>Nice work! Waiting for parent approval 🎉</span>
+          <span className="text-2xl">🪙</span>
+          <span>Chore complete! +{chore.reward_value} Quest Coins earned! 🎉</span>
         </div>
       );
     } catch (err) {

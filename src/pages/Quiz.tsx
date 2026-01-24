@@ -4,7 +4,7 @@ import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { QuizCard } from '@/components/QuizCard';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trophy, Brain, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Loader2, Trophy, Brain, ArrowLeft, RefreshCw, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,12 +26,16 @@ interface QuizAttempt {
   points_earned: number;
 }
 
+const DAILY_COMPLETION_BONUS = 100;
+
 const Quiz = () => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [attempts, setAttempts] = useState<Map<string, QuizAttempt>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sessionPoints, setSessionPoints] = useState(0);
+  const [dailyBonusAwarded, setDailyBonusAwarded] = useState(false);
 
   const { user, profile, isParent, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -45,8 +49,19 @@ const Quiz = () => {
   useEffect(() => {
     if (profile) {
       fetchQuestionsAndAttempts();
+      checkDailyBonus();
     }
   }, [profile]);
+
+  const checkDailyBonus = async () => {
+    if (!profile) return;
+    
+    // Check if user already got daily bonus today
+    const today = new Date().toISOString().split('T')[0];
+    const bonusKey = `quiz_bonus_${profile.id}_${today}`;
+    const alreadyAwarded = localStorage.getItem(bonusKey);
+    setDailyBonusAwarded(!!alreadyAwarded);
+  };
 
   const fetchQuestionsAndAttempts = async () => {
     if (!profile) return;
@@ -100,6 +115,35 @@ const Quiz = () => {
     }
   };
 
+  const awardDailyBonus = async () => {
+    if (!profile || dailyBonusAwarded) return;
+
+    try {
+      // Award the bonus coins
+      const { error } = await supabase
+        .from('profiles')
+        .update({ total_earnings: profile.total_earnings + DAILY_COMPLETION_BONUS })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      // Mark as awarded for today
+      const today = new Date().toISOString().split('T')[0];
+      const bonusKey = `quiz_bonus_${profile.id}_${today}`;
+      localStorage.setItem(bonusKey, 'true');
+      setDailyBonusAwarded(true);
+
+      toast.success(
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🏆</span>
+          <span>Daily Quiz Complete! +{DAILY_COMPLETION_BONUS} Quest Coins!</span>
+        </div>
+      );
+    } catch (err) {
+      console.error('Error awarding daily bonus:', err);
+    }
+  };
+
   const handleAnswer = async (questionId: string, selectedAnswer: number, isCorrect: boolean, points: number) => {
     if (!profile) return;
 
@@ -118,12 +162,13 @@ const Quiz = () => {
       if (error) throw error;
 
       // Update local state
-      setAttempts(prev => new Map(prev).set(questionId, {
+      const newAttempts = new Map(attempts).set(questionId, {
         question_id: questionId,
         selected_answer: selectedAnswer,
         is_correct: isCorrect,
         points_earned: points
-      }));
+      });
+      setAttempts(newAttempts);
 
       if (isCorrect) {
         setSessionPoints(prev => prev + points);
@@ -137,15 +182,56 @@ const Quiz = () => {
         if (updateError) console.error('Error updating earnings:', updateError);
       }
 
+      // Check if all questions are now answered - award daily bonus
+      const unanswered = questions.filter(q => !newAttempts.has(q.id));
+      if (unanswered.length === 0 && !dailyBonusAwarded) {
+        await awardDailyBonus();
+      }
+
     } catch (err) {
       console.error('Error saving quiz attempt:', err);
       toast.error('Failed to save your answer');
     }
   };
 
+  const generateNewQuestions = async () => {
+    if (!profile) return;
+    setIsGenerating(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-quiz-questions');
+
+      if (error) throw error;
+
+      if (data?.questionsAdded > 0) {
+        toast.success(
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <span>{data.questionsAdded} new {data.difficulty} questions added!</span>
+          </div>
+        );
+        await fetchQuestionsAndAttempts();
+      } else {
+        toast.info('No new questions available right now. Try again later!');
+      }
+    } catch (err: any) {
+      console.error('Error generating questions:', err);
+      if (err.message?.includes('429') || err.message?.includes('rate limit')) {
+        toast.error('Too many requests. Please wait a moment.');
+      } else if (err.message?.includes('402')) {
+        toast.error('AI service temporarily unavailable.');
+      } else {
+        toast.error('Failed to generate new questions');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const totalPoints = Array.from(attempts.values()).reduce((sum, a) => sum + a.points_earned, 0);
   const answeredCount = attempts.size;
   const correctCount = Array.from(attempts.values()).filter(a => a.is_correct).length;
+  const accuracyRate = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
 
   if (authLoading || isLoading) {
     return (
@@ -180,53 +266,93 @@ const Quiz = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">Money Quiz</h1>
-              <p className="text-sm text-muted-foreground">Learn & earn bonus points!</p>
+              <p className="text-sm text-muted-foreground">Learn & earn Quest Coins!</p>
             </div>
           </div>
           
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <div className="bg-card/50 rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold text-foreground">{answeredCount}/{questions.length}</p>
-              <p className="text-xs text-muted-foreground">Answered</p>
+          <div className="grid grid-cols-4 gap-2 mt-4">
+            <div className="bg-card/50 rounded-xl p-2 text-center">
+              <p className="text-lg font-bold text-foreground">{answeredCount}</p>
+              <p className="text-xs text-muted-foreground">Done</p>
             </div>
-            <div className="bg-card/50 rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold text-green-600">{correctCount}</p>
+            <div className="bg-card/50 rounded-xl p-2 text-center">
+              <p className="text-lg font-bold text-primary">{correctCount}</p>
               <p className="text-xs text-muted-foreground">Correct</p>
             </div>
-            <div className="bg-card/50 rounded-xl p-3 text-center">
-              <p className="text-2xl font-bold text-primary">{totalPoints}</p>
-              <p className="text-xs text-muted-foreground">Points</p>
+            <div className="bg-card/50 rounded-xl p-2 text-center">
+              <p className="text-lg font-bold text-foreground">{accuracyRate}%</p>
+              <p className="text-xs text-muted-foreground">Accuracy</p>
+            </div>
+            <div className="bg-card/50 rounded-xl p-2 text-center">
+              <p className="text-lg font-bold text-accent-foreground">{totalPoints}</p>
+              <p className="text-xs text-muted-foreground">🪙 Earned</p>
             </div>
           </div>
 
           {sessionPoints > 0 && (
             <div className="mt-3 text-center text-sm font-medium text-primary">
-              🎉 +{sessionPoints} points earned this session!
+              🎉 +{sessionPoints} coins earned this session!
             </div>
           )}
+
+          {/* Daily Bonus Info */}
+          <div className="mt-3 p-2 bg-accent/20 rounded-lg text-center">
+            <p className="text-xs text-muted-foreground">
+              {dailyBonusAwarded 
+                ? '✅ Daily bonus claimed!' 
+                : `🎯 Complete all questions for +${DAILY_COMPLETION_BONUS} bonus coins!`}
+            </p>
+          </div>
         </div>
 
         {/* Quiz Content */}
         {allAnswered ? (
-          <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
+          <div className="text-center py-8 bg-card rounded-2xl border border-border/50">
             <Trophy className="w-16 h-16 text-primary mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-foreground mb-2">All Done!</h2>
-            <p className="text-muted-foreground mb-4">
-              You've answered all {questions.length} questions!<br />
-              Score: {correctCount}/{questions.length} correct ({totalPoints} points)
+            <p className="text-muted-foreground mb-2">
+              You've answered all {questions.length} questions!
             </p>
-            <p className="text-sm text-muted-foreground">Check back later for new questions!</p>
+            <p className="text-lg font-semibold text-primary mb-4">
+              🪙 {totalPoints} coins earned
+            </p>
+            
+            <Button
+              onClick={generateNewQuestions}
+              disabled={isGenerating}
+              className="gap-2"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  Get New Questions
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2">
+              Questions adapt to your skill level!
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">
-                Question {unansweredQuestions.length > 0 ? questions.indexOf(unansweredQuestions[0]) + 1 : currentIndex + 1} of {questions.length}
+                Question {questions.indexOf(unansweredQuestions[0]) + 1} of {questions.length}
               </h2>
-              <span className="text-sm text-muted-foreground">
-                {unansweredQuestions.length} remaining
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 bg-muted rounded-full capitalize">
+                  {unansweredQuestions[0]?.difficulty || 'easy'}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {unansweredQuestions.length} left
+                </span>
+              </div>
             </div>
 
             {unansweredQuestions.slice(0, 1).map(question => (
@@ -244,6 +370,31 @@ const Quiz = () => {
                 Answer to reveal the next question!
               </p>
             )}
+          </div>
+        )}
+
+        {/* Generate More Questions Button */}
+        {!allAnswered && questions.length < 20 && (
+          <div className="text-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={generateNewQuestions}
+              disabled={isGenerating}
+              className="gap-2"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Add More Questions
+                </>
+              )}
+            </Button>
           </div>
         )}
       </main>
