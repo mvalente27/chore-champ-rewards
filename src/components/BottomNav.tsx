@@ -22,13 +22,20 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   ];
 
   const handleClick = (item: typeof navItems[0]) => {
-    // If we're on a different page, navigate first
-    if (location.pathname !== item.path) {
+    // For items that navigate to the index page with different tabs
+    if (item.path === '/') {
+      // If already on index, just switch tabs
+      if (location.pathname === '/') {
+        if (onTabChange) {
+          onTabChange(item.id);
+        }
+      } else {
+        // Navigate to index with tab param
+        navigate(`/?tab=${item.id}`);
+      }
+    } else {
+      // Navigate to other pages
       navigate(item.path);
-    }
-    // Update tab state for in-page switching (only applies when already on the right page)
-    if (onTabChange) {
-      onTabChange(item.id);
     }
   };
 
