@@ -49,6 +49,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     { id: 'chores', icon: ListTodo, label: 'Chores', path: '/' },
     ...(isParent ? [{ id: 'approvals', icon: ClipboardCheck, label: 'Approve', path: '/approvals', badge: pendingCount }] : []),
     { id: 'rewards', icon: Trophy, label: 'Rewards', path: '/rewards' },
+    { id: 'history', icon: History, label: 'History', path: '/history' },
     { id: 'profile', icon: User, label: 'Profile', path: '/' },
   ];
 
