@@ -67,11 +67,49 @@ serve(async (req) => {
 
     const { kidProfileId, username, password }: CreateKidLoginRequest = await req.json();
 
-    // Validate username
+    // Server-side validation - validate kidProfileId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!kidProfileId || !uuidRegex.test(kidProfileId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid kid profile ID" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate username format
+    if (!username || typeof username !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "Username is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const usernameRegex = /^[a-z0-9_]{3,20}$/;
     if (!usernameRegex.test(username)) {
       return new Response(
         JSON.stringify({ error: "Username must be 3-20 lowercase letters, numbers, or underscores" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side validation - password requirements
+    if (!password || typeof password !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "Password is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (password.length < 6) {
+      return new Response(
+        JSON.stringify({ error: "Password must be at least 6 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (password.length > 72) {
+      return new Response(
+        JSON.stringify({ error: "Password must be at most 72 characters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
