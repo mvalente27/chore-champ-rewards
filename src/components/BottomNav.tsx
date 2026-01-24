@@ -17,8 +17,8 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     { id: 'home', icon: Home, label: 'Home', path: '/' },
     { id: 'chores', icon: ListTodo, label: 'Chores', path: '/' },
     ...(isParent ? [{ id: 'wallet', icon: Wallet, label: 'Wallet', path: '/wallet' }] : []),
-    ...(isParent ? [{ id: 'approvals', icon: ClipboardCheck, label: 'Approvals', path: '/approvals' }] : []),
     { id: 'rewards', icon: Trophy, label: 'Rewards', path: '/rewards' },
+    { id: 'profile', icon: User, label: 'Profile', path: '/' },
   ];
 
   const handleClick = (item: typeof navItems[0]) => {
