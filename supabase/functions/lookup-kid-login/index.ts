@@ -28,18 +28,37 @@ serve(async (req) => {
 
     const { username, familyCode }: LookupRequest = await req.json();
 
-    console.log(`Looking up kid login: username=${username}, familyCode=${familyCode}`);
+    console.log(`Looking up kid login attempt`);
 
-    if (!username || username.length < 3) {
+    // Server-side validation - username format
+    if (!username || typeof username !== 'string') {
       return new Response(
-        JSON.stringify({ error: "Invalid username" }),
+        JSON.stringify({ error: "Invalid credentials" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!familyCode || familyCode.length !== 6) {
+    // Validate username format (3-20 lowercase letters, numbers, or underscores)
+    const usernameRegex = /^[a-z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username.toLowerCase())) {
       return new Response(
-        JSON.stringify({ error: "Invalid family code" }),
+        JSON.stringify({ error: "Invalid credentials" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side validation - family code format (exactly 6 alphanumeric)
+    if (!familyCode || typeof familyCode !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "Invalid credentials" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const familyCodeRegex = /^[A-Za-z0-9]{6}$/;
+    if (!familyCodeRegex.test(familyCode)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid credentials" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -63,9 +82,10 @@ serve(async (req) => {
     console.log(`Found ${matchingUsers.length} users with username: ${username}`);
 
     if (matchingUsers.length === 0) {
+      // Use generic error message to prevent username enumeration
       return new Response(
-        JSON.stringify({ error: "Username not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Invalid credentials" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -101,11 +121,11 @@ serve(async (req) => {
       }
     }
 
-    // No matching user found with correct family code
-    console.log("No user found with matching username and family code");
+    // No matching user found with correct family code - use generic error to prevent enumeration
+    console.log("No user found with matching credentials");
     return new Response(
-      JSON.stringify({ error: "Username or family code not found" }),
-      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Invalid credentials" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error) {

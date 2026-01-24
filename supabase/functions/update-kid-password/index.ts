@@ -52,10 +52,33 @@ serve(async (req) => {
 
     const { kidProfileId, newPassword }: UpdateKidPasswordRequest = await req.json();
 
-    // Validate password
-    if (!newPassword || newPassword.length < 6) {
+    // Server-side validation - password requirements
+    if (!newPassword || typeof newPassword !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "Password is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (newPassword.length < 6) {
       return new Response(
         JSON.stringify({ error: "Password must be at least 6 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (newPassword.length > 72) {
+      return new Response(
+        JSON.stringify({ error: "Password must be at most 72 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate kidProfileId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!kidProfileId || !uuidRegex.test(kidProfileId)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid kid profile ID" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
