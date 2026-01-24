@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      businesses: {
+        Row: {
+          base_cost: number
+          base_income: number
+          category: string
+          created_at: string
+          description: string | null
+          emoji: string
+          id: string
+          name: string
+          unlock_level: number
+        }
+        Insert: {
+          base_cost?: number
+          base_income?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          emoji?: string
+          id?: string
+          name: string
+          unlock_level?: number
+        }
+        Update: {
+          base_cost?: number
+          base_income?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          emoji?: string
+          id?: string
+          name?: string
+          unlock_level?: number
+        }
+        Relationships: []
+      }
       chores: {
         Row: {
           assigned_to: string | null
@@ -191,6 +227,96 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kid_businesses: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          last_collected_at: string
+          level: number
+          profile_id: string
+          total_earned: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          last_collected_at?: string
+          level?: number
+          profile_id: string
+          total_earned?: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          last_collected_at?: string
+          level?: number
+          profile_id?: string
+          total_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_businesses_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kid_businesses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kid_stocks: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          shares: number
+          stock_id: string
+          total_invested: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          shares?: number
+          stock_id: string
+          total_invested?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          shares?: number
+          stock_id?: string
+          total_invested?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_stocks_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kid_stocks_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
             referencedColumns: ["id"]
           },
         ]
@@ -482,6 +608,42 @@ export type Database = {
           },
         ]
       }
+      stocks: {
+        Row: {
+          created_at: string
+          current_price: number
+          description: string | null
+          emoji: string
+          id: string
+          name: string
+          previous_price: number
+          symbol: string
+          volatility: number
+        }
+        Insert: {
+          created_at?: string
+          current_price?: number
+          description?: string | null
+          emoji?: string
+          id?: string
+          name: string
+          previous_price?: number
+          symbol: string
+          volatility?: number
+        }
+        Update: {
+          created_at?: string
+          current_price?: number
+          description?: string | null
+          emoji?: string
+          id?: string
+          name?: string
+          previous_price?: number
+          symbol?: string
+          volatility?: number
+        }
+        Relationships: []
+      }
       wallet_transactions: {
         Row: {
           amount: number
@@ -593,6 +755,7 @@ export type Database = {
         }
         Returns: string
       }
+      update_stock_prices: { Args: never; Returns: undefined }
     }
     Enums: {
       chore_status:
