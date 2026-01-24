@@ -27,7 +27,7 @@ interface KidStock {
 
 export default function StockMarket() {
   const navigate = useNavigate();
-  const { user, profile, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading, refreshProfile } = useAuth();
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [kidStocks, setKidStocks] = useState<KidStock[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,8 +124,7 @@ export default function StockMarket() {
 
       toast({ title: "🎉 Stock Purchased!", description: `You bought 1 share of ${stock.symbol}!` });
       await fetchData();
-      // Refresh profile
-      window.location.reload();
+      await refreshProfile();
     } catch (error) {
       console.error("Error buying stock:", error);
       toast({ title: "Error buying stock", variant: "destructive" });
@@ -177,7 +176,7 @@ export default function StockMarket() {
 
       toast({ title: "💰 Stock Sold!", description: `You sold 1 share of ${stock.symbol} for ${price} coins!` });
       await fetchData();
-      window.location.reload();
+      await refreshProfile();
     } catch (error) {
       console.error("Error selling stock:", error);
       toast({ title: "Error selling stock", variant: "destructive" });

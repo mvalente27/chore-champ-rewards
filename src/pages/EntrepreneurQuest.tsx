@@ -31,7 +31,7 @@ interface KidBusiness {
 
 export default function EntrepreneurQuest() {
   const navigate = useNavigate();
-  const { user, profile, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading, refreshProfile } = useAuth();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [ownedBusinesses, setOwnedBusinesses] = useState<KidBusiness[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +146,7 @@ export default function EntrepreneurQuest() {
       }
 
       await fetchData();
-      window.location.reload();
+      await refreshProfile();
     } catch (error) {
       console.error("Error buying business:", error);
       toast({ title: "Error purchasing business", variant: "destructive" });
@@ -187,7 +187,7 @@ export default function EntrepreneurQuest() {
 
       toast({ title: "💰 Income Collected!", description: `You earned ${income} coins from ${business.name}!` });
       await fetchData();
-      window.location.reload();
+      await refreshProfile();
     } catch (error) {
       console.error("Error collecting income:", error);
       toast({ title: "Error collecting income", variant: "destructive" });
