@@ -58,7 +58,6 @@ export function HomeView({
         totalEarnings={profile.total_earnings}
         weeklyEarnings={0}
         savingsGoal={100}
-        onInvest={() => toast.info('Savings goal feature coming soon! 📈')}
       />
       
       {/* Stats Grid */}

@@ -2,9 +2,3 @@ project_id = "cyadvsspkrxmsydeyyvd"
 
 [functions.create-kid-login]
 verify_jwt = false
-
-[functions.add-wallet-funds]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
