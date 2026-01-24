@@ -109,12 +109,21 @@ const Auth = () => {
     try {
       if (loginType === 'kid') {
         // Kid login with username + family code
-        const { data: lookupData, error: lookupError } = await supabase.functions.invoke('lookup-kid-login', {
-          body: { 
-            username: username.toLowerCase(),
-            familyCode: familyCode.toUpperCase(),
-          },
-        });
+        let lookupData, lookupError;
+        try {
+          const result = await supabase.functions.invoke('lookup-kid-login', {
+            body: { 
+              username: username.toLowerCase(),
+              familyCode: familyCode.toUpperCase(),
+            },
+          });
+          lookupData = result.data;
+          lookupError = result.error;
+        } catch (networkErr) {
+          console.error('Network error during lookup:', networkErr);
+          toast.error('Cannot connect to server. Please check your internet connection or try a different browser.');
+          return;
+        }
 
         if (lookupError || !lookupData?.email) {
           toast.error('Username or family code not found. Please check and try again.');
