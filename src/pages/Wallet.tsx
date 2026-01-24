@@ -1,31 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
+import { AwardCoinsModal } from '@/components/AwardCoinsModal';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, Wallet as WalletIcon, ArrowUpRight, Send, Users } from 'lucide-react';
-import { toast } from 'sonner';
-import { TransferToKidModal } from '@/components/TransferToKidModal';
-
-interface WalletData {
-  id: string;
-  balance: number;
-  stripe_customer_id: string | null;
-}
-
-interface Transaction {
-  id: string;
-  type: string;
-  amount: number;
-  description: string | null;
-  created_at: string;
-  recipient_profile_id: string | null;
-}
+import { Loader2, Coins, Users, Gift } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface KidProfile {
   id: string;
@@ -34,30 +15,13 @@ interface KidProfile {
 }
 
 export default function Wallet() {
-  const { user, profile, isLoading: authLoading, isParent } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  
-  const [wallet, setWallet] = useState<WalletData | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [kids, setKids] = useState<KidProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [addAmount, setAddAmount] = useState('');
-  const [isAddingFunds, setIsAddingFunds] = useState(false);
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [isAwardModalOpen, setIsAwardModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('wallet');
 
-  useEffect(() => {
-    // Handle success/cancel from Stripe
-    if (searchParams.get('success') === 'true') {
-      const amount = searchParams.get('amount');
-      toast.success(`Successfully added $${amount} to your wallet!`);
-      // Clear the URL params
-      navigate('/wallet', { replace: true });
-    } else if (searchParams.get('canceled') === 'true') {
-      toast.info('Payment was canceled');
-      navigate('/wallet', { replace: true });
-    }
-  }, [searchParams, navigate]);
+  const { user, profile, isParent, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -66,243 +30,145 @@ export default function Wallet() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    if (profile && isParent) {
-      fetchWalletData();
+    if (profile?.household_id && isParent) {
       fetchKids();
+    } else if (profile && !isParent) {
+      setIsLoading(false);
     }
-  }, [profile, isParent]);
+  }, [profile?.household_id, isParent]);
 
-  const fetchWalletData = async () => {
-    if (!profile) return;
-    
+  const fetchKids = async () => {
+    if (!profile?.household_id) return;
+    setIsLoading(true);
+
     try {
-      // Fetch wallet
-      const { data: walletData, error: walletError } = await supabase
-        .from('parent_wallets')
-        .select('*')
-        .eq('profile_id', profile.id)
-        .maybeSingle();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, total_earnings')
+        .eq('household_id', profile.household_id)
+        .eq('type', 'kid')
+        .order('name');
 
-      if (walletError) throw walletError;
-      
-      if (walletData) {
-        setWallet(walletData);
-        
-        // Fetch transactions
-        const { data: txData, error: txError } = await supabase
-          .from('wallet_transactions')
-          .select('*')
-          .eq('wallet_id', walletData.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        if (txError) throw txError;
-        setTransactions(txData || []);
-      }
-    } catch (error) {
-      console.error('Error fetching wallet:', error);
-      toast.error('Failed to load wallet data');
+      if (error) throw error;
+      setKids(data || []);
+    } catch (err) {
+      console.error('Error fetching kids:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchKids = async () => {
-    if (!profile) return;
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, name, total_earnings')
-      .eq('household_id', profile.household_id)
-      .eq('type', 'kid');
-
-    if (!error && data) {
-      setKids(data);
-    }
-  };
-
-  const handleAddFunds = async () => {
-    const amount = parseFloat(addAmount);
-    if (isNaN(amount) || amount < 1) {
-      toast.error('Please enter a valid amount (minimum $1)');
-      return;
-    }
-
-    setIsAddingFunds(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('add-wallet-funds', {
-        body: { amount },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error adding funds:', error);
-      toast.error('Failed to start payment process');
-    } finally {
-      setIsAddingFunds(false);
-    }
-  };
-
-  const handleTransferComplete = () => {
-    fetchWalletData();
-    fetchKids();
-  };
+  const totalKidCoins = kids.reduce((sum, kid) => sum + kid.total_earnings, 0);
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!isParent) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="container max-w-md mx-auto px-4 py-6 pb-24">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground">
-                The wallet is only available for parents.
-              </p>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-background pb-24">
+        <Header 
+          userName={profile?.name || ''} 
+          userAvatar={profile?.avatar_url || '👧'} 
+        />
+        <main className="max-w-md mx-auto px-4 py-6">
+          <div className="text-center py-16">
+            <Coins className="w-16 h-16 mx-auto text-amber-500 mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Your Quest Coins</h2>
+            <p className="text-5xl font-bold text-primary mb-2">{profile?.total_earnings || 0}</p>
+            <p className="text-muted-foreground">Complete chores to earn more coins!</p>
+          </div>
         </main>
-        <BottomNav />
+        <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container max-w-md mx-auto px-4 py-6 pb-24 space-y-6">
-        {/* Balance Card */}
-        <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-primary-foreground/80">
-              Wallet Balance
-            </CardDescription>
-            <CardTitle className="text-4xl font-bold flex items-center gap-2">
-              <WalletIcon className="h-8 w-8" />
-              ${wallet?.balance?.toFixed(2) || '0.00'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-primary-foreground/70">
-              Add funds to send money to your kids
-            </p>
-          </CardContent>
-        </Card>
+    <div className="min-h-screen bg-background pb-24">
+      <Header 
+        userName={profile?.name || ''} 
+        userAvatar={profile?.avatar_url || '👨‍👩‍👧'} 
+      />
+      
+      <main className="max-w-md mx-auto px-4 py-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Coins className="h-7 w-7 text-amber-500" />
+            Quest Coins
+          </h1>
+          <p className="text-muted-foreground text-sm">Award coins to your kids for completing tasks</p>
+        </div>
 
-        {/* Add Funds */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <ArrowUpRight className="h-5 w-5" />
-              Add Funds
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount ($)</Label>
-              <Input
-                id="amount"
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Enter amount"
-                value={addAmount}
-                onChange={(e) => setAddAmount(e.target.value)}
-              />
+        {/* Stats Card */}
+        <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Total Coins in Household</p>
+              <p className="text-4xl font-bold text-foreground">{totalKidCoins}</p>
             </div>
-            <Button 
-              className="w-full" 
-              onClick={handleAddFunds}
-              disabled={isAddingFunds || !addAmount}
-            >
-              {isAddingFunds ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Add Funds with Card
-            </Button>
-          </CardContent>
-        </Card>
+            <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center">
+              <Coins className="w-8 h-8 text-amber-500" />
+            </div>
+          </div>
+          
+          <Button 
+            onClick={() => setIsAwardModalOpen(true)} 
+            className="w-full bg-amber-500 hover:bg-amber-600 text-primary-foreground"
+            disabled={kids.length === 0}
+          >
+            <Gift className="w-4 h-4 mr-2" />
+            Award Coins
+          </Button>
+        </div>
 
-        {/* Send to Kids */}
-        {kids.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Send className="h-5 w-5" />
-                Send to Kids
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setIsTransferModalOpen(true)}
-                disabled={!wallet || wallet.balance <= 0}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Transfer Funds to Kid
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recent Transactions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Transactions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {transactions.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                No transactions yet
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {transactions.map((tx) => (
-                  <div 
-                    key={tx.id} 
-                    className="flex items-center justify-between py-2 border-b last:border-0"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">
-                        {tx.type === 'load' ? 'Added Funds' : 
-                         tx.type === 'transfer_out' ? 'Sent to Kid' : 
-                         'Chore Payout'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(tx.created_at).toLocaleDateString()}
-                      </p>
+        {/* Kids List */}
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Kids' Balances
+          </h2>
+          
+          {kids.length === 0 ? (
+            <div className="text-center py-8 bg-muted/30 rounded-xl">
+              <p className="text-muted-foreground">No kids added yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Add kids from the Home screen</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {kids.map((kid) => (
+                <div 
+                  key={kid.id} 
+                  className="flex items-center justify-between p-4 bg-card border rounded-xl"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-lg">
+                      👧
                     </div>
-                    <span className={`font-semibold ${
-                      tx.type === 'load' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {tx.type === 'load' ? '+' : '-'}${tx.amount.toFixed(2)}
-                    </span>
+                    <span className="font-medium">{kid.name}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="flex items-center gap-1 text-lg font-bold text-amber-600">
+                    <Coins className="w-5 h-5" />
+                    {kid.total_earnings}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
-      <BottomNav />
+      
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <TransferToKidModal
-        isOpen={isTransferModalOpen}
-        onClose={() => setIsTransferModalOpen(false)}
+      <AwardCoinsModal
+        isOpen={isAwardModalOpen}
+        onClose={() => setIsAwardModalOpen(false)}
         kids={kids}
-        maxAmount={wallet?.balance || 0}
-        onTransferComplete={handleTransferComplete}
+        onAwardComplete={fetchKids}
       />
     </div>
   );

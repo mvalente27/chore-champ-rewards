@@ -10,14 +10,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Gift } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Gift, Coins, ShoppingBag } from 'lucide-react';
 
 const rewardIcons = ['🎁', '🎮', '🍦', '🎬', '📱', '🧸', '⚽', '🎨', '📚', '🎵', '🍕', '🎂'];
 
 interface AddRewardModalProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (reward: { name: string; description: string; cost: number; icon: string }) => Promise<void>;
+  onAdd: (reward: { 
+    name: string; 
+    description: string; 
+    cost: number; 
+    icon: string;
+    is_purchasable?: boolean;
+    purchase_url?: string;
+    purchase_price?: number;
+  }) => Promise<void>;
 }
 
 export function AddRewardModal({ open, onClose, onAdd }: AddRewardModalProps) {
@@ -26,6 +35,9 @@ export function AddRewardModal({ open, onClose, onAdd }: AddRewardModalProps) {
   const [cost, setCost] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('🎁');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPurchasable, setIsPurchasable] = useState(false);
+  const [purchaseUrl, setPurchaseUrl] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
 
   const handleSubmit = async () => {
     if (!name.trim() || !cost || parseFloat(cost) <= 0) return;
@@ -36,23 +48,30 @@ export function AddRewardModal({ open, onClose, onAdd }: AddRewardModalProps) {
         name: name.trim(),
         description: description.trim(),
         cost: parseFloat(cost),
-        icon: selectedIcon
+        icon: selectedIcon,
+        is_purchasable: isPurchasable,
+        purchase_url: isPurchasable ? purchaseUrl.trim() : undefined,
+        purchase_price: isPurchasable && purchasePrice ? parseFloat(purchasePrice) : undefined,
       });
-      setName('');
-      setDescription('');
-      setCost('');
-      setSelectedIcon('🎁');
+      resetForm();
       onClose();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleClose = () => {
+  const resetForm = () => {
     setName('');
     setDescription('');
     setCost('');
     setSelectedIcon('🎁');
+    setIsPurchasable(false);
+    setPurchaseUrl('');
+    setPurchasePrice('');
+  };
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
 
@@ -65,7 +84,7 @@ export function AddRewardModal({ open, onClose, onAdd }: AddRewardModalProps) {
             Add a Reward
           </DialogTitle>
           <DialogDescription>
-            Create a reward that kids can redeem with their earnings
+            Create a reward that kids can redeem with their Quest Coins
           </DialogDescription>
         </DialogHeader>
 
@@ -118,18 +137,68 @@ export function AddRewardModal({ open, onClose, onAdd }: AddRewardModalProps) {
 
           {/* Cost Input */}
           <div className="space-y-2">
-            <Label htmlFor="reward-cost">Cost ($)</Label>
+            <Label htmlFor="reward-cost" className="flex items-center gap-1">
+              <Coins className="w-4 h-4 text-amber-500" />
+              Cost (Quest Coins)
+            </Label>
             <Input
               id="reward-cost"
               type="number"
-              min="0.01"
-              step="0.01"
-              placeholder="5.00"
+              min="1"
+              step="1"
+              placeholder="50"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
               disabled={isSubmitting}
             />
           </div>
+
+          {/* Purchasable Toggle */}
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-muted-foreground" />
+              <div>
+                <Label htmlFor="purchasable-toggle" className="font-medium">Physical Item</Label>
+                <p className="text-xs text-muted-foreground">This is something you'll purchase</p>
+              </div>
+            </div>
+            <Switch
+              id="purchasable-toggle"
+              checked={isPurchasable}
+              onCheckedChange={setIsPurchasable}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* Purchasable Fields */}
+          {isPurchasable && (
+            <div className="space-y-3 p-3 border border-dashed rounded-lg">
+              <div className="space-y-2">
+                <Label htmlFor="purchase-url">Product Link (optional)</Label>
+                <Input
+                  id="purchase-url"
+                  type="url"
+                  placeholder="https://amazon.com/..."
+                  value={purchaseUrl}
+                  onChange={(e) => setPurchaseUrl(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="purchase-price">Actual Price ($)</Label>
+                <Input
+                  id="purchase-price"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="19.99"
+                  value={purchasePrice}
+                  onChange={(e) => setPurchasePrice(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">

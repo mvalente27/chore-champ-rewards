@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Kid {
@@ -14,65 +14,63 @@ interface Kid {
   total_earnings: number;
 }
 
-interface TransferToKidModalProps {
+interface AwardCoinsModalProps {
   isOpen: boolean;
   onClose: () => void;
   kids: Kid[];
-  maxAmount: number;
-  onTransferComplete: () => void;
+  onAwardComplete: () => void;
 }
 
-export function TransferToKidModal({ 
+export function AwardCoinsModal({ 
   isOpen, 
   onClose, 
   kids, 
-  maxAmount,
-  onTransferComplete 
-}: TransferToKidModalProps) {
+  onAwardComplete 
+}: AwardCoinsModalProps) {
   const [selectedKid, setSelectedKid] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleTransfer = async () => {
-    const transferAmount = parseFloat(amount);
+  const handleAward = async () => {
+    const awardAmount = parseFloat(amount);
     
     if (!selectedKid) {
       toast.error('Please select a kid');
       return;
     }
     
-    if (isNaN(transferAmount) || transferAmount <= 0) {
+    if (isNaN(awardAmount) || awardAmount <= 0) {
       toast.error('Please enter a valid amount');
-      return;
-    }
-    
-    if (transferAmount > maxAmount) {
-      toast.error('Insufficient wallet balance');
       return;
     }
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.rpc('transfer_to_kid', {
+      const { error } = await supabase.rpc('award_coins_to_kid', {
         p_kid_profile_id: selectedKid,
-        p_amount: transferAmount,
+        p_amount: awardAmount,
         p_description: description || null,
       });
 
       if (error) throw error;
 
       const kidName = kids.find(k => k.id === selectedKid)?.name;
-      toast.success(`Successfully sent $${transferAmount.toFixed(2)} to ${kidName}!`);
+      toast.success(
+        <div className="flex items-center gap-2">
+          <Coins className="h-5 w-5 text-amber-500" />
+          <span>Awarded {awardAmount} Quest Coins to {kidName}! 🎉</span>
+        </div>
+      );
       
       setSelectedKid('');
       setAmount('');
       setDescription('');
-      onTransferComplete();
+      onAwardComplete();
       onClose();
     } catch (error: unknown) {
-      console.error('Transfer error:', error);
-      const message = error instanceof Error ? error.message : 'Failed to transfer funds';
+      console.error('Award error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to award coins';
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -92,7 +90,10 @@ export function TransferToKidModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Send Money to Kid</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5 text-amber-500" />
+            Award Quest Coins
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
@@ -105,7 +106,7 @@ export function TransferToKidModal({
               <SelectContent>
                 {kids.map((kid) => (
                   <SelectItem key={kid.id} value={kid.id}>
-                    {kid.name} (Balance: ${kid.total_earnings.toFixed(2)})
+                    {kid.name} ({kid.total_earnings} coins)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -113,27 +114,23 @@ export function TransferToKidModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="transfer-amount">Amount ($)</Label>
+            <Label htmlFor="award-amount">Amount</Label>
             <Input
-              id="transfer-amount"
+              id="award-amount"
               type="number"
-              min="0.01"
-              step="0.01"
-              max={maxAmount}
-              placeholder="Enter amount"
+              min="1"
+              step="1"
+              placeholder="Enter coins to award"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground">
-              Available: ${maxAmount.toFixed(2)}
-            </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Note (optional)</Label>
+            <Label htmlFor="description">Reason (optional)</Label>
             <Input
               id="description"
-              placeholder="e.g., Birthday gift"
+              placeholder="e.g., Bonus for good behavior"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={100}
@@ -145,9 +142,9 @@ export function TransferToKidModal({
           <Button variant="outline" onClick={handleClose} disabled={isLoading} className="flex-1">
             Cancel
           </Button>
-          <Button onClick={handleTransfer} disabled={isLoading || !selectedKid || !amount} className="flex-1">
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Send
+          <Button onClick={handleAward} disabled={isLoading || !selectedKid || !amount} className="flex-1">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Coins className="h-4 w-4 mr-2" />}
+            Award
           </Button>
         </div>
       </DialogContent>

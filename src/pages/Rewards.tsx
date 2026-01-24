@@ -4,7 +4,7 @@ import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { AddRewardModal } from '@/components/AddRewardModal';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus, ShoppingCart } from 'lucide-react';
+import { Loader2, Plus, ShoppingCart, Coins, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +17,9 @@ interface Reward {
   cost: number;
   icon: string;
   is_active: boolean;
+  is_purchasable: boolean;
+  purchase_url: string | null;
+  purchase_price: number | null;
   created_at: string;
 }
 
@@ -66,7 +69,15 @@ const Rewards = () => {
     }
   };
 
-  const handleAddReward = async (reward: { name: string; description: string; cost: number; icon: string }) => {
+  const handleAddReward = async (reward: { 
+    name: string; 
+    description: string; 
+    cost: number; 
+    icon: string;
+    is_purchasable?: boolean;
+    purchase_url?: string;
+    purchase_price?: number;
+  }) => {
     if (!profile?.household_id) return;
 
     try {
@@ -78,6 +89,9 @@ const Rewards = () => {
           description: reward.description || null,
           cost: reward.cost,
           icon: reward.icon,
+          is_purchasable: reward.is_purchasable || false,
+          purchase_url: reward.purchase_url || null,
+          purchase_price: reward.purchase_price || null,
           created_by: profile.id
         })
         .select()
@@ -149,9 +163,12 @@ const Rewards = () => {
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Rewards Store</h1>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Coins className="h-6 w-6 text-amber-500" />
+              Rewards Store
+            </h1>
             <p className="text-muted-foreground text-sm">
-              {isParent ? 'Manage rewards for your kids' : `Your balance: $${profile?.total_earnings?.toFixed(2) || '0.00'}`}
+              {isParent ? 'Manage rewards for your kids' : `Your balance: ${profile?.total_earnings || 0} Quest Coins`}
             </p>
           </div>
           {isParent && (
@@ -189,7 +206,21 @@ const Rewards = () => {
                     {reward.description && (
                       <p className="text-sm text-muted-foreground truncate">{reward.description}</p>
                     )}
-                    <p className="text-lg font-bold text-primary mt-1">${reward.cost.toFixed(2)}</p>
+                    <div className="flex items-center gap-1 text-lg font-bold text-amber-600 mt-1">
+                      <Coins className="w-4 h-4" />
+                      {reward.cost}
+                    </div>
+                    {reward.is_purchasable && reward.purchase_url && isParent && (
+                      <a 
+                        href={reward.purchase_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary flex items-center gap-1 mt-1 hover:underline"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Buy (${reward.purchase_price?.toFixed(2) || 'View'})
+                      </a>
+                    )}
                   </div>
                   {!isParent && (
                     <Button

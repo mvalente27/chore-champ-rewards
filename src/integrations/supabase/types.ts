@@ -403,7 +403,10 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          is_purchasable: boolean
           name: string
+          purchase_price: number | null
+          purchase_url: string | null
         }
         Insert: {
           cost?: number
@@ -414,7 +417,10 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_purchasable?: boolean
           name: string
+          purchase_price?: number | null
+          purchase_url?: string | null
         }
         Update: {
           cost?: number
@@ -425,7 +431,10 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_purchasable?: boolean
           name?: string
+          purchase_price?: number | null
+          purchase_url?: string | null
         }
         Relationships: []
       }
@@ -526,6 +535,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_coins_to_kid: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_kid_profile_id: string
+        }
+        Returns: undefined
+      }
       create_household_with_parent_profile: {
         Args: { household_name?: string; parent_name: string }
         Returns: {
