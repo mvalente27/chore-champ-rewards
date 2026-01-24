@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { EarningsCard } from '@/components/EarningsCard';
 import { StatsGrid } from '@/components/StatsGrid';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil } from 'lucide-react';
+import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2 } from 'lucide-react';
 import { Profile } from '@/types/database';
 
 interface HomeViewProps {
@@ -62,21 +62,56 @@ export function HomeView({
         totalStars={completedToday * 2}
       />
 
-      {/* Quiz Banner - Kids Only */}
+      {/* Learning & Games Section - Kids Only */}
       {!isParent && (
-        <button
-          onClick={() => navigate('/quiz')}
-          className="w-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3 hover:from-primary/15 hover:to-accent/15 transition-all"
-        >
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-semibold text-foreground">Money Quiz</p>
-            <p className="text-sm text-muted-foreground">Learn & earn bonus points!</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </button>
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Learn & Play</h2>
+          
+          {/* Money Quiz */}
+          <button
+            onClick={() => navigate('/quiz')}
+            className="w-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3 hover:from-primary/15 hover:to-accent/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <Brain className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Money Quiz</p>
+              <p className="text-sm text-muted-foreground">Learn & earn bonus points!</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Stock Market Game */}
+          <button
+            onClick={() => navigate('/stocks')}
+            className="w-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3 hover:from-emerald-500/15 hover:to-teal-500/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Stock Market</p>
+              <p className="text-sm text-muted-foreground">Invest coins & watch them grow!</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Entrepreneur Quest */}
+          <button
+            onClick={() => navigate('/entrepreneur')}
+            className="w-full bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center gap-3 hover:from-purple-500/15 hover:to-indigo-500/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-purple-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Entrepreneur Quest</p>
+              <p className="text-sm text-muted-foreground">Build your business empire!</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
       )}
 
       {/* Pending Approvals Banner for Parents */}
