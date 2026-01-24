@@ -5,21 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, Star, Sparkles } from 'lucide-react';
+import { Loader2, Star, Sparkles, User, Users } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
+const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').max(20);
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [loginType, setLoginType] = useState<'parent' | 'kid'>('parent');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; username?: string }>({});
 
   const { signIn, signUp, user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -31,11 +36,18 @@ const Auth = () => {
   }, [user, isLoading, navigate]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string; name?: string } = {};
+    const newErrors: { email?: string; password?: string; name?: string; username?: string } = {};
 
-    const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
+    if (loginType === 'parent') {
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        newErrors.email = emailResult.error.errors[0].message;
+      }
+    } else {
+      const usernameResult = usernameSchema.safeParse(username);
+      if (!usernameResult.success) {
+        newErrors.username = usernameResult.error.errors[0].message;
+      }
     }
 
     const passwordResult = passwordSchema.safeParse(password);
@@ -43,7 +55,7 @@ const Auth = () => {
       newErrors.password = passwordResult.error.errors[0].message;
     }
 
-    if (isSignUp) {
+    if (isSignUp && loginType === 'parent') {
       const nameResult = nameSchema.safeParse(name);
       if (!nameResult.success) {
         newErrors.name = nameResult.error.errors[0].message;
@@ -54,6 +66,33 @@ const Auth = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleKidLogin = async () => {
+    // For kid login, we need to convert username to the fake email format
+    // The format is: username@household-short.chorequest.local
+    // But we don't know the household ID, so we need to look it up
+    
+    // First, try to find the user by searching all possible emails
+    // This is done server-side in a more efficient way, but for now
+    // we'll use a pattern match approach
+    
+    try {
+      // Try to sign in with email pattern - we'll search for the username
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: `${username.toLowerCase()}@`, // This won't work directly
+        password,
+      });
+
+      if (error) throw error;
+      return { error: null };
+    } catch {
+      // If direct login fails, try to find the user via RPC
+      // For now, show a helpful error
+      return { 
+        error: new Error('Could not find account. Make sure you entered the correct username and password.') 
+      };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -62,7 +101,31 @@ const Auth = () => {
     setIsSubmitting(true);
 
     try {
-      if (isSignUp) {
+      if (loginType === 'kid') {
+        // Kid login with username
+        // We need to find the fake email associated with this username
+        // For now, we'll use a lookup edge function
+        const { data: lookupData, error: lookupError } = await supabase.functions.invoke('lookup-kid-login', {
+          body: { username: username.toLowerCase() },
+        });
+
+        if (lookupError || !lookupData?.email) {
+          toast.error('Username not found. Please check and try again.');
+          return;
+        }
+
+        const { error } = await supabase.auth.signInWithPassword({
+          email: lookupData.email,
+          password,
+        });
+
+        if (error) {
+          toast.error('Invalid username or password. Please try again.');
+        } else {
+          toast.success(`Welcome back! 👋`);
+          navigate('/');
+        }
+      } else if (isSignUp) {
         const { error } = await signUp(email, password, name);
         if (error) {
           if (error.message.includes('already registered')) {
@@ -114,7 +177,7 @@ const Auth = () => {
       </div>
 
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pb-2">
           <CardTitle className="flex items-center justify-center gap-2">
             {isSignUp ? (
               <>
@@ -132,6 +195,21 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {!isSignUp && (
+            <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'parent' | 'kid')} className="mb-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="parent" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Parent
+                </TabsTrigger>
+                <TabsTrigger value="kid" className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Kid
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
@@ -150,20 +228,37 @@ const Auth = () => {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="parent@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isSubmitting}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-            </div>
+            {loginType === 'parent' ? (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="parent@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="your_username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  disabled={isSubmitting}
+                />
+                {errors.username && (
+                  <p className="text-sm text-destructive">{errors.username}</p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -188,25 +283,30 @@ const Auth = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setErrors({});
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isSignUp
-                ? 'Already have an account? Sign in'
-                : "Don't have an account? Create one"}
-            </button>
-          </div>
+          {loginType === 'parent' && (
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setErrors({});
+                }}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {isSignUp
+                  ? 'Already have an account? Sign in'
+                  : "Don't have an account? Create one"}
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <p className="text-xs text-muted-foreground mt-6 text-center max-w-xs">
-        Parents sign up first, then add kids from the dashboard
+        {loginType === 'parent' 
+          ? 'Parents sign up first, then add kids from the dashboard'
+          : 'Ask your parent for your username and password'
+        }
       </p>
     </div>
   );
