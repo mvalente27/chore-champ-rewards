@@ -10,6 +10,7 @@ import { EditChoreModal } from '@/components/EditChoreModal';
 import { AddKidModal } from '@/components/AddKidModal';
 import { EditKidModal } from '@/components/EditKidModal';
 import { SetupKidLoginModal } from '@/components/SetupKidLoginModal';
+import { ResetKidPasswordModal } from '@/components/ResetKidPasswordModal';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Chore as LegacyChore } from '@/types/chores';
 import { Chore, Profile, ChoreStatus } from '@/types/database';
@@ -26,8 +27,10 @@ const Index = () => {
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
   const [isAddKidModalOpen, setIsAddKidModalOpen] = useState(false);
   const [isSetupLoginModalOpen, setIsSetupLoginModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [isEditKidModalOpen, setIsEditKidModalOpen] = useState(false);
   const [selectedKidForLogin, setSelectedKidForLogin] = useState<Profile | null>(null);
+  const [selectedKidForPasswordReset, setSelectedKidForPasswordReset] = useState<Profile | null>(null);
   const [selectedKidForEdit, setSelectedKidForEdit] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -512,6 +515,12 @@ const Index = () => {
             setIsSetupLoginModalOpen(true);
           }
         }}
+        onResetPassword={() => {
+          if (selectedKidForEdit) {
+            setSelectedKidForPasswordReset(selectedKidForEdit);
+            setIsResetPasswordModalOpen(true);
+          }
+        }}
       />
 
       <EditChoreModal
@@ -535,6 +544,16 @@ const Index = () => {
         onSuccess={() => {
           fetchProfiles();
         }}
+      />
+
+      <ResetKidPasswordModal
+        open={isResetPasswordModalOpen}
+        onClose={() => {
+          setIsResetPasswordModalOpen(false);
+          setSelectedKidForPasswordReset(null);
+        }}
+        kid={selectedKidForPasswordReset}
+        onSuccess={() => {}}
       />
     </div>
   );

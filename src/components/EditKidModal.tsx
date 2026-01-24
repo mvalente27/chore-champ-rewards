@@ -20,9 +20,10 @@ interface EditKidModalProps {
   kid: Profile | null;
   onSave: (id: string, name: string, avatar: string) => Promise<void>;
   onSetupLogin: () => void;
+  onResetPassword?: () => void;
 }
 
-export function EditKidModal({ open, onClose, kid, onSave, onSetupLogin }: EditKidModalProps) {
+export function EditKidModal({ open, onClose, kid, onSave, onSetupLogin, onResetPassword }: EditKidModalProps) {
   const [name, setName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('👧');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,9 +104,22 @@ export function EditKidModal({ open, onClose, kid, onSave, onSetupLogin }: EditK
           <div className="space-y-2">
             <Label>Login Credentials</Label>
             {hasLogin ? (
-              <div className="flex items-center gap-2 p-3 bg-accent/30 rounded-lg border border-accent/40">
-                <CheckCircle className="w-4 h-4 text-primary" />
-                <span className="text-sm text-foreground">Login credentials set up</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 p-3 bg-accent/30 rounded-lg border border-accent/40">
+                  <CheckCircle className="w-4 h-4 text-primary" />
+                  <span className="text-sm text-foreground">Login credentials set up</span>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    onClose();
+                    onResetPassword?.();
+                  }}
+                >
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  Reset Password
+                </Button>
               </div>
             ) : (
               <Button
