@@ -13,6 +13,7 @@ import Quiz from "./pages/Quiz";
 import Wallet from "./pages/Wallet";
 import StockMarket from "./pages/StockMarket";
 import EntrepreneurQuest from "./pages/EntrepreneurQuest";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/stocks" element={<StockMarket />} />
             <Route path="/entrepreneur" element={<EntrepreneurQuest />} />
+            <Route path="/history" element={<History />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
