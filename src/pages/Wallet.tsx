@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface KidProfile {
   id: string;
   name: string;
+  avatar_url: string | null;
   total_earnings: number;
 }
 
@@ -44,7 +45,7 @@ export default function Wallet() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, total_earnings')
+        .select('id, name, avatar_url, total_earnings')
         .eq('household_id', profile.household_id)
         .eq('type', 'kid')
         .order('name');
@@ -147,7 +148,7 @@ export default function Wallet() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-lg">
-                      👧
+                      {kid.avatar_url || '👧'}
                     </div>
                     <span className="font-medium">{kid.name}</span>
                   </div>
