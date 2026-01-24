@@ -1,6 +1,18 @@
 project_id = "cyadvsspkrxmsydeyyvd"
 
 [functions.create-kid-login]
+enabled = true
+verify_jwt = false
+
+[functions.lookup-kid-login]
+enabled = true
+verify_jwt = false
+
+[functions.generate-quiz-questions]
+enabled = true
+verify_jwt = true
+
+
 verify_jwt = false
 
 [functions.lookup-kid-login]
