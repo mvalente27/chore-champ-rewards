@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { DollarSign, Tv, Users, Cookie, Sparkles } from 'lucide-react';
+import { Coins, Tv, Users, Cookie, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RewardType, Chore } from '@/types/chores';
 
@@ -18,13 +18,13 @@ type RewardInputType = 'numeric' | 'text';
 
 const rewardTypes: { 
   type: RewardType; 
-  icon: typeof DollarSign; 
+  icon: typeof Coins; 
   label: string; 
   unit: string;
   inputType: RewardInputType;
   placeholder: string;
 }[] = [
-  { type: 'cash', icon: DollarSign, label: 'Cash', unit: '$', inputType: 'numeric', placeholder: '5.00' },
+  { type: 'cash', icon: Coins, label: 'Coins', unit: '🪙', inputType: 'numeric', placeholder: '10' },
   { type: 'tv', icon: Tv, label: 'Screen Time', unit: 'min', inputType: 'numeric', placeholder: '30' },
   { type: 'playdate', icon: Users, label: 'Play Date', unit: '', inputType: 'text', placeholder: 'e.g., With Jake on Saturday' },
   { type: 'treat', icon: Cookie, label: 'Treat', unit: '', inputType: 'text', placeholder: 'e.g., Ice cream, Cookie' },
