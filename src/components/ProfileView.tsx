@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Coins, Calendar } from 'lucide-react';
+import { LogOut, User, Coins, Calendar, Home, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Profile {
   id: string;
@@ -18,7 +20,26 @@ interface ProfileViewProps {
   onSignOut: () => void;
 }
 
+// Generate family code from household ID (must match edge function logic)
+function generateFamilyCode(householdId: string): string {
+  return householdId.replace(/-/g, '').slice(0, 6).toUpperCase();
+}
+
 export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) {
+  const [copied, setCopied] = useState(false);
+  const familyCode = generateFamilyCode(profile.household_id);
+
+  const handleCopyFamilyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(familyCode);
+      setCopied(true);
+      toast.success('Family code copied!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Failed to copy');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Profile Header */}
@@ -33,6 +54,38 @@ export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) 
           </div>
         </div>
       </div>
+
+      {/* Family Code - Parents Only */}
+      {isParent && (
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-4 border border-primary/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Home className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Family Code</p>
+                <p className="text-xl font-mono font-bold tracking-widest text-foreground">{familyCode}</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCopyFamilyCode}
+              className="h-10 w-10"
+            >
+              {copied ? (
+                <Check className="w-5 h-5 text-primary" />
+              ) : (
+                <Copy className="w-5 h-5 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Share this code with your kids so they can log in on their own devices
+          </p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
