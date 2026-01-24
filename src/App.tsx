@@ -14,6 +14,7 @@ import Wallet from "./pages/Wallet";
 import StockMarket from "./pages/StockMarket";
 import EntrepreneurQuest from "./pages/EntrepreneurQuest";
 import History from "./pages/History";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/stocks" element={<StockMarket />} />
             <Route path="/entrepreneur" element={<EntrepreneurQuest />} />
             <Route path="/history" element={<History />} />
+            <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
