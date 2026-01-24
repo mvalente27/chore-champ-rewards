@@ -8,6 +8,7 @@ import { ProfileView } from '@/components/ProfileView';
 import { AddChoreModal } from '@/components/AddChoreModal';
 import { EditChoreModal } from '@/components/EditChoreModal';
 import { AddKidModal } from '@/components/AddKidModal';
+import { EditKidModal } from '@/components/EditKidModal';
 import { SetupKidLoginModal } from '@/components/SetupKidLoginModal';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Chore as LegacyChore } from '@/types/chores';
@@ -25,12 +26,9 @@ const Index = () => {
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
   const [isAddKidModalOpen, setIsAddKidModalOpen] = useState(false);
   const [isSetupLoginModalOpen, setIsSetupLoginModalOpen] = useState(false);
-  const [selectedKidForLogin, setSelectedKidForLogin] = useState<{
-    id: string;
-    name: string;
-    avatar_url: string | null;
-    user_id?: string | null;
-  } | null>(null);
+  const [isEditKidModalOpen, setIsEditKidModalOpen] = useState(false);
+  const [selectedKidForLogin, setSelectedKidForLogin] = useState<Profile | null>(null);
+  const [selectedKidForEdit, setSelectedKidForEdit] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { user, profile, isParent, signOut, isLoading: authLoading } = useAuth();
@@ -248,6 +246,26 @@ const Index = () => {
     }
   };
 
+  const handleEditKid = async (id: string, name: string, avatar: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name, avatar_url: avatar })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setHouseholdProfiles(householdProfiles.map(p => 
+        p.id === id ? { ...p, name, avatar_url: avatar } : p
+      ));
+      toast.success('Kid profile updated! ✨');
+    } catch (err) {
+      console.error('Error updating kid:', err);
+      toast.error('Failed to update kid profile');
+      throw err;
+    }
+  };
+
   const handleEditChore = (legacyChore: LegacyChore) => {
     // Find the original database chore
     const dbChore = chores.find(c => c.id === legacyChore.id);
@@ -388,6 +406,10 @@ const Index = () => {
               setSelectedKidForLogin(kid);
               setIsSetupLoginModalOpen(true);
             }}
+            onEditKid={(kid) => {
+              setSelectedKidForEdit(kid);
+              setIsEditKidModalOpen(true);
+            }}
           />
         );
       case 'chores':
@@ -427,6 +449,10 @@ const Index = () => {
               setSelectedKidForLogin(kid);
               setIsSetupLoginModalOpen(true);
             }}
+            onEditKid={(kid) => {
+              setSelectedKidForEdit(kid);
+              setIsEditKidModalOpen(true);
+            }}
           />
         );
     }
@@ -455,6 +481,22 @@ const Index = () => {
         open={isAddKidModalOpen}
         onClose={() => setIsAddKidModalOpen(false)}
         onAdd={handleAddKid}
+      />
+
+      <EditKidModal
+        open={isEditKidModalOpen}
+        onClose={() => {
+          setIsEditKidModalOpen(false);
+          setSelectedKidForEdit(null);
+        }}
+        kid={selectedKidForEdit}
+        onSave={handleEditKid}
+        onSetupLogin={() => {
+          if (selectedKidForEdit) {
+            setSelectedKidForLogin(selectedKidForEdit);
+            setIsSetupLoginModalOpen(true);
+          }
+        }}
       />
 
       <EditChoreModal

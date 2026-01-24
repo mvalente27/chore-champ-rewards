@@ -2,18 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { EarningsCard } from '@/components/EarningsCard';
 import { StatsGrid } from '@/components/StatsGrid';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
-
-interface Profile {
-  id: string;
-  user_id?: string | null;
-  household_id: string;
-  name: string;
-  type: 'parent' | 'kid';
-  avatar_url: string | null;
-  total_earnings: number;
-}
+import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil } from 'lucide-react';
+import { Profile } from '@/types/database';
 
 interface HomeViewProps {
   profile: Profile;
@@ -24,6 +14,7 @@ interface HomeViewProps {
   pendingApproval: number;
   onAddKid: () => void;
   onSetupKidLogin?: (kid: Profile) => void;
+  onEditKid?: (kid: Profile) => void;
 }
 
 export function HomeView({
@@ -35,6 +26,7 @@ export function HomeView({
   pendingApproval,
   onAddKid,
   onSetupKidLogin,
+  onEditKid,
 }: HomeViewProps) {
   const navigate = useNavigate();
 
@@ -127,26 +119,36 @@ export function HomeView({
                     className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50"
                   >
                     <span className="text-2xl">{kid.avatar_url || '👧'}</span>
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{kid.name}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">{kid.name}</p>
                       <p className="text-xs text-muted-foreground">{kid.total_earnings} Quest Coins</p>
                     </div>
-                    {hasLogin ? (
-                      <div className="flex items-center gap-1 text-xs text-green-600 bg-green-500/10 px-2 py-1 rounded-full">
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Can login</span>
-                      </div>
-                    ) : (
+                    <div className="flex items-center gap-2">
+                      {hasLogin ? (
+                        <div className="flex items-center gap-1 text-xs text-primary bg-accent/30 px-2 py-1 rounded-full">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Can login</span>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onSetupKidLogin?.(kid)}
+                          className="text-xs"
+                        >
+                          <KeyRound className="w-3 h-3 mr-1" />
+                          Setup Login
+                        </Button>
+                      )}
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => onSetupKidLogin?.(kid)}
-                        className="text-xs"
+                        onClick={() => onEditKid?.(kid)}
+                        className="p-2 h-auto"
                       >
-                        <KeyRound className="w-3 h-3 mr-1" />
-                        Setup Login
+                        <Pencil className="w-4 h-4 text-muted-foreground" />
                       </Button>
-                    )}
+                    </div>
                   </div>
                 );
               })}

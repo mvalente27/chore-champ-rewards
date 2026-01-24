@@ -1,16 +1,7 @@
 import { useState, useEffect, useRef, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Profile {
-  id: string;
-  user_id: string;
-  household_id: string;
-  name: string;
-  type: 'parent' | 'kid';
-  avatar_url: string | null;
-  total_earnings: number;
-}
+import { Profile } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
