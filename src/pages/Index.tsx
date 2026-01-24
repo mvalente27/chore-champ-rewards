@@ -106,15 +106,21 @@ const Index = () => {
     if (!chore) return;
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('chores')
         .update({ 
           assigned_to: profile.id,
           status: 'claimed' as ChoreStatus
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) throw error;
+      
+      if (!data) {
+        throw new Error('Failed to claim chore - no rows updated');
+      }
 
       setChores(chores.map(c => 
         c.id === id ? { ...c, assigned_to: profile.id, status: 'claimed' as ChoreStatus } : c
@@ -129,6 +135,8 @@ const Index = () => {
     } catch (err) {
       console.error('Error claiming chore:', err);
       toast.error('Failed to claim chore');
+      // Refresh chores to get correct state
+      fetchChores();
     }
   };
 
@@ -138,17 +146,30 @@ const Index = () => {
     const chore = chores.find(c => c.id === id);
     if (!chore) return;
 
+    // Ensure the chore is claimed by this user before marking complete
+    if (chore.status !== 'claimed' || chore.assigned_to !== profile.id) {
+      toast.error('You need to claim this chore first!');
+      fetchChores(); // Refresh to get correct state
+      return;
+    }
+
     try {
       // Update chore status to pending_verification (requires parent approval)
-      const { error: choreError } = await supabase
+      const { data, error: choreError } = await supabase
         .from('chores')
         .update({ 
           status: 'pending_verification' as ChoreStatus,
           completed_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
 
       if (choreError) throw choreError;
+      
+      if (!data) {
+        throw new Error('Failed to submit chore - no rows updated');
+      }
 
       // Update local chore state
       setChores(chores.map(c => 
@@ -164,6 +185,7 @@ const Index = () => {
     } catch (err) {
       console.error('Error completing chore:', err);
       toast.error('Failed to submit chore');
+      fetchChores(); // Refresh to get correct state
     }
   };
 
