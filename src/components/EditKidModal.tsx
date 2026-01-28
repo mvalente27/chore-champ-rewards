@@ -9,16 +9,26 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Pencil, KeyRound, CheckCircle } from 'lucide-react';
+import { Pencil, KeyRound, CheckCircle, Cake } from 'lucide-react';
 import { Profile } from '@/types/database';
 
 const kidAvatars = ['👧', '👦', '🧒', '👶', '🧒🏻', '🧒🏽', '🧒🏿', '👧🏻', '👧🏽', '👧🏿', '👦🏻', '👦🏽', '👦🏿'];
 
+// Calculate age tier from birth date
+function getAgeTier(birthDate: Date): { tier: string; label: string; emoji: string } {
+  const today = new Date();
+  const age = today.getFullYear() - birthDate.getFullYear();
+  
+  if (age <= 8) return { tier: 'explorer', label: 'Explorer (5-8)', emoji: '🌟' };
+  if (age <= 12) return { tier: 'builder', label: 'Builder (9-12)', emoji: '🔨' };
+  return { tier: 'achiever', label: 'Achiever (13-18)', emoji: '🚀' };
+}
+
 interface EditKidModalProps {
   open: boolean;
   onClose: () => void;
-  kid: Profile | null;
-  onSave: (id: string, name: string, avatar: string) => Promise<void>;
+  kid: (Profile & { birth_date?: string | null }) | null;
+  onSave: (id: string, name: string, avatar: string, birthDate: string | null) => Promise<void>;
   onSetupLogin: () => void;
   onResetPassword?: () => void;
 }
@@ -26,12 +36,14 @@ interface EditKidModalProps {
 export function EditKidModal({ open, onClose, kid, onSave, onSetupLogin, onResetPassword }: EditKidModalProps) {
   const [name, setName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('👧');
+  const [birthDate, setBirthDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (kid) {
       setName(kid.name);
       setSelectedAvatar(kid.avatar_url || '👧');
+      setBirthDate(kid.birth_date || '');
     }
   }, [kid]);
 
@@ -40,7 +52,7 @@ export function EditKidModal({ open, onClose, kid, onSave, onSetupLogin, onReset
 
     setIsSubmitting(true);
     try {
-      await onSave(kid.id, name.trim(), selectedAvatar);
+      await onSave(kid.id, name.trim(), selectedAvatar, birthDate || null);
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -52,10 +64,13 @@ export function EditKidModal({ open, onClose, kid, onSave, onSetupLogin, onReset
   };
 
   const hasLogin = !!kid?.user_id;
+  
+  // Calculate age tier preview if birthdate is set
+  const ageTierPreview = birthDate ? getAgeTier(new Date(birthDate)) : null;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-sm mx-4 rounded-2xl">
+      <DialogContent className="max-w-sm mx-4 rounded-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Pencil className="w-5 h-5 text-primary" />
@@ -98,6 +113,36 @@ export function EditKidModal({ open, onClose, kid, onSave, onSetupLogin, onReset
               onChange={(e) => setName(e.target.value)}
               disabled={isSubmitting}
             />
+          </div>
+
+          {/* Birthday Input */}
+          <div className="space-y-2">
+            <Label htmlFor="kid-birthday" className="flex items-center gap-2">
+              <Cake className="w-4 h-4 text-muted-foreground" />
+              Birthday
+            </Label>
+            <Input
+              id="kid-birthday"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              disabled={isSubmitting}
+              max={new Date().toISOString().split('T')[0]}
+              min={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+            />
+            <p className="text-xs text-muted-foreground">
+              Used to personalize quizzes and games for their age
+            </p>
+            
+            {/* Age Tier Preview */}
+            {ageTierPreview && (
+              <div className="flex items-center gap-2 p-2 bg-accent/30 rounded-lg mt-2">
+                <span className="text-lg">{ageTierPreview.emoji}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {ageTierPreview.label}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Login Status */}
