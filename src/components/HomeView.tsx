@@ -1,9 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { EarningsCard } from '@/components/EarningsCard';
 import { StatsGrid } from '@/components/StatsGrid';
+import { LevelProgress } from '@/components/LevelProgress';
+import { BadgeGrid } from '@/components/BadgeGrid';
+import { Leaderboard } from '@/components/Leaderboard';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2 } from 'lucide-react';
+import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal } from 'lucide-react';
 import { Profile } from '@/types/database';
+import { useGamification } from '@/hooks/useGamification';
 
 interface HomeViewProps {
   profile: Profile;
@@ -31,9 +35,11 @@ export function HomeView({
   onEditKid,
 }: HomeViewProps) {
   const navigate = useNavigate();
+  const { level, xp, xpProgress, xpForNextLevel, allBadges, unlockedBadges } = useGamification(
+    !isParent ? profile.id : undefined
+  );
 
   const kids = householdProfiles.filter(p => p.type === 'kid');
-
   return (
     <div className="space-y-6">
       {/* Role Badge */}
@@ -55,6 +61,16 @@ export function HomeView({
           savingsGoal={100}
         />
       )}
+
+      {/* Level Progress - Kids Only */}
+      {!isParent && (
+        <LevelProgress
+          level={level}
+          xp={xp}
+          xpProgress={xpProgress}
+          xpForNextLevel={xpForNextLevel}
+        />
+      )}
       
       {/* Stats Grid */}
       <StatsGrid 
@@ -63,6 +79,30 @@ export function HomeView({
         currentStreak={currentStreak}
         totalStars={completedToday * 2}
       />
+
+      {/* Badges Section - Kids Only */}
+      {!isParent && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Medal className="w-5 h-5 text-primary" />
+              My Badges
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              {unlockedBadges.length}/{allBadges.length} unlocked
+            </span>
+          </div>
+          <BadgeGrid allBadges={allBadges} unlockedBadges={unlockedBadges} showAll />
+        </div>
+      )}
+
+      {/* Leaderboard - Kids Only */}
+      {!isParent && (
+        <Leaderboard
+          householdId={profile.household_id}
+          currentProfileId={profile.id}
+        />
+      )}
 
       {/* Learning & Games Section - Kids Only */}
       {!isParent && (
