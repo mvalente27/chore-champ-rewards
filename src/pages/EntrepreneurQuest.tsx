@@ -64,13 +64,9 @@ export default function EntrepreneurQuest() {
 
   const fetchData = async () => {
     try {
-      // Filter businesses by age tier - show current tier and below
-      const tierOrder = ['explorer', 'builder', 'achiever'];
-      const tierIndex = tierOrder.indexOf(ageTier);
-      const allowedTiers = tierOrder.slice(0, tierIndex + 1);
-
+      // Filter businesses by age tier - show only current tier's content
       const [businessRes, ownedRes] = await Promise.all([
-        supabase.from("businesses").select("*").in("age_tier", allowedTiers).order("unlock_level").order("base_cost"),
+        supabase.from("businesses").select("*").eq("age_tier", ageTier).order("unlock_level").order("base_cost"),
         supabase.from("kid_businesses").select("*").eq("profile_id", profile!.id)
       ]);
 
