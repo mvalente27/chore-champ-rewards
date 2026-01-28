@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      badges: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+          xp_reward: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          name: string
+          requirement_type: string
+          requirement_value?: number
+          xp_reward?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          requirement_type?: string
+          requirement_value?: number
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           age_tier: string | null
@@ -234,6 +270,42 @@ export type Database = {
           },
         ]
       }
+      kid_badges: {
+        Row: {
+          badge_id: string
+          id: string
+          profile_id: string
+          unlocked_at: string
+        }
+        Insert: {
+          badge_id: string
+          id?: string
+          profile_id: string
+          unlocked_at?: string
+        }
+        Update: {
+          badge_id?: string
+          id?: string
+          profile_id?: string
+          unlocked_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kid_badges_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kid_businesses: {
         Row: {
           business_id: string
@@ -366,11 +438,13 @@ export type Database = {
           created_at: string
           household_id: string
           id: string
+          level: number
           name: string
           total_earnings: number
           type: Database["public"]["Enums"]["profile_type"]
           updated_at: string
           user_id: string | null
+          xp: number
         }
         Insert: {
           avatar_url?: string | null
@@ -378,11 +452,13 @@ export type Database = {
           created_at?: string
           household_id: string
           id?: string
+          level?: number
           name: string
           total_earnings?: number
           type?: Database["public"]["Enums"]["profile_type"]
           updated_at?: string
           user_id?: string | null
+          xp?: number
         }
         Update: {
           avatar_url?: string | null
@@ -390,11 +466,13 @@ export type Database = {
           created_at?: string
           household_id?: string
           id?: string
+          level?: number
           name?: string
           total_earnings?: number
           type?: Database["public"]["Enums"]["profile_type"]
           updated_at?: string
           user_id?: string | null
+          xp?: number
         }
         Relationships: [
           {
@@ -746,6 +824,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      award_xp: {
+        Args: { p_amount: number; p_profile_id: string }
+        Returns: {
+          leveled_up: boolean
+          new_level: number
+          new_xp: number
+        }[]
+      }
+      calculate_level: { Args: { p_xp: number }; Returns: number }
       create_household_with_parent_profile: {
         Args: { household_name?: string; parent_name: string }
         Returns: {
@@ -763,11 +850,13 @@ export type Database = {
           created_at: string
           household_id: string
           id: string
+          level: number
           name: string
           total_earnings: number
           type: Database["public"]["Enums"]["profile_type"]
           updated_at: string
           user_id: string | null
+          xp: number
         }
         SetofOptions: {
           from: "*"
@@ -799,6 +888,7 @@ export type Database = {
         Returns: string
       }
       update_stock_prices: { Args: never; Returns: Json }
+      xp_for_level: { Args: { p_level: number }; Returns: number }
     }
     Enums: {
       chore_status:
