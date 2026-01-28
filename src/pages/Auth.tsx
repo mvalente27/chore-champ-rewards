@@ -7,9 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, Star, Sparkles, User, Users } from 'lucide-react';
+import { Loader2, Star, Sparkles, User, Users, Download, Smartphone } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 const emailSchema = z.string().email('Please enter a valid email');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -27,9 +32,40 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; username?: string; familyCode?: string }>({});
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   const { signIn, signUp, user, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Check if app is installed and listen for install prompt
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsInstalled(true);
+        toast.success('App installed! You can now open it from your home screen.');
+      }
+      setDeferredPrompt(null);
+    } else {
+      navigate('/install');
+    }
+  };
 
   useEffect(() => {
     if (user && !isLoading) {
@@ -181,6 +217,25 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      {/* Install Banner - Show before login */}
+      {!isInstalled && (
+        <div className="w-full max-w-md mb-4">
+          <button
+            onClick={handleInstallClick}
+            className="w-full bg-gradient-to-r from-secondary/15 to-secondary/5 border border-secondary/30 rounded-xl p-3 flex items-center gap-3 hover:from-secondary/20 hover:to-secondary/10 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
+              <Smartphone className="w-5 h-5 text-secondary" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground text-sm">Install ChoreQuest</p>
+              <p className="text-xs text-muted-foreground">Add to home screen for the best experience</p>
+            </div>
+            <Download className="w-5 h-5 text-secondary" />
+          </button>
+        </div>
+      )}
+
       {/* Logo/Header */}
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-2">
