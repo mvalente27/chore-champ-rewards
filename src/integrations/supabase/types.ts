@@ -617,6 +617,35 @@ export type Database = {
           },
         ]
       }
+      stock_price_history: {
+        Row: {
+          id: string
+          price: number
+          recorded_at: string
+          stock_id: string
+        }
+        Insert: {
+          id?: string
+          price: number
+          recorded_at?: string
+          stock_id: string
+        }
+        Update: {
+          id?: string
+          price?: number
+          recorded_at?: string
+          stock_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_price_history_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stocks: {
         Row: {
           age_tier: string | null
