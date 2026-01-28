@@ -359,6 +359,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          birth_date: string | null
           created_at: string
           household_id: string
           id: string
@@ -370,6 +371,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           household_id: string
           id?: string
@@ -381,6 +383,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           household_id?: string
           id?: string
@@ -712,11 +715,13 @@ export type Database = {
           profile_id: string
         }[]
       }
+      get_age_tier: { Args: { p_birth_date: string }; Returns: string }
       get_current_household_id: { Args: never; Returns: string }
       get_current_profile: {
         Args: never
         Returns: {
           avatar_url: string | null
+          birth_date: string | null
           created_at: string
           household_id: string
           id: string
