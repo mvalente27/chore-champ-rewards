@@ -92,16 +92,32 @@ serve(async (req) => {
       );
     }
 
-    // Get kid's quiz performance
+    // Calculate age tier from birth_date
+    const getAgeTier = (birthDate: string | null): string => {
+      if (!birthDate) return 'explorer';
+      const birth = new Date(birthDate);
+      const now = new Date();
+      const age = now.getFullYear() - birth.getFullYear();
+      if (age <= 8) return 'explorer';
+      if (age <= 12) return 'builder';
+      return 'achiever';
+    };
+
+    const ageTier = getAgeTier(profile.birth_date);
+
+    // Get kid's quiz performance for their age tier
     const { data: attempts } = await supabaseAdmin
       .from("quiz_attempts")
-      .select("*, quiz_questions(difficulty)")
+      .select("*, quiz_questions(difficulty, age_tier)")
       .eq("profile_id", profile.id);
+
+    // Filter attempts for current age tier only
+    const tierAttempts = attempts?.filter(a => a.quiz_questions?.age_tier === ageTier) || [];
 
     // Calculate performance metrics
     const performance: QuizPerformance = {
-      totalAttempts: attempts?.length || 0,
-      correctAttempts: attempts?.filter(a => a.is_correct).length || 0,
+      totalAttempts: tierAttempts.length,
+      correctAttempts: tierAttempts.filter(a => a.is_correct).length,
       accuracyRate: 0,
       difficultyBreakdown: {
         easy: { attempts: 0, correct: 0 },
@@ -113,7 +129,7 @@ serve(async (req) => {
     if (performance.totalAttempts > 0) {
       performance.accuracyRate = performance.correctAttempts / performance.totalAttempts;
       
-      attempts?.forEach(a => {
+      tierAttempts.forEach(a => {
         const diff = a.quiz_questions?.difficulty || 'easy';
         if (diff in performance.difficultyBreakdown) {
           performance.difficultyBreakdown[diff as keyof typeof performance.difficultyBreakdown].attempts++;
@@ -127,29 +143,42 @@ serve(async (req) => {
     const targetDifficulty = determineDifficulty(performance);
     const pointsForDifficulty = targetDifficulty === 'hard' ? 20 : targetDifficulty === 'medium' ? 15 : 10;
 
-    // Get existing question IDs to avoid duplicates
+    // Get existing question IDs for this age tier to avoid duplicates
     const { data: existingQuestions } = await supabaseAdmin
       .from("quiz_questions")
-      .select("question");
+      .select("question")
+      .eq("age_tier", ageTier);
     
     const existingQuestionTexts = existingQuestions?.map(q => q.question.toLowerCase()) || [];
 
-    // Generate new questions using AI
-    const categories = ['saving', 'spending', 'earning', 'investing', 'budgeting'];
+    // Generate new questions using AI - customize by age tier
+    const categoryByTier: Record<string, string[]> = {
+      explorer: ['saving', 'coins', 'piggy banks', 'allowance'],
+      builder: ['budgeting', 'spending', 'earning', 'needs vs wants'],
+      achiever: ['investing', 'compound interest', 'stocks', 'financial planning']
+    };
+    const categories = categoryByTier[ageTier] || categoryByTier.explorer;
     const randomCategory = categories[Math.floor(Math.random() * categories.length)];
 
-    const systemPrompt = `You are a financial literacy educator for children ages 6-14. Generate educational quiz questions about money and finance.
+    // Age-appropriate prompts
+    const ageDescriptions: Record<string, string> = {
+      explorer: 'young children ages 5-8. Use simple words, fun examples like toys and candy, and basic counting/math.',
+      builder: 'children ages 9-12. Include practical examples like saving for games, doing chores, and simple budgeting.',
+      achiever: 'teenagers ages 13-18. Cover real-world concepts like investing, interest rates, and financial planning.'
+    };
+
+    const systemPrompt = `You are a financial literacy educator for ${ageDescriptions[ageTier]}
 
 Rules:
 - Questions should be age-appropriate and fun
-- For 'easy' difficulty: basic concepts like coins, saving piggy banks, simple math
-- For 'medium' difficulty: budgeting basics, needs vs wants, earning money
-- For 'hard' difficulty: investing concepts, compound interest, financial planning
+- For 'easy' difficulty: basic concepts appropriate for the age group
+- For 'medium' difficulty: moderate complexity for the age group  
+- For 'hard' difficulty: challenging but still age-appropriate
 - Each question must have exactly 4 answer options
 - Only ONE answer should be correct
-- Make questions engaging and relatable to kids' experiences`;
+- Make questions engaging and relatable`;
 
-    const userPrompt = `Generate 3 unique ${targetDifficulty} difficulty quiz questions about "${randomCategory}" for kids.
+    const userPrompt = `Generate 3 unique ${targetDifficulty} difficulty quiz questions about "${randomCategory}" for ${ageTier === 'explorer' ? 'young kids (5-8)' : ageTier === 'builder' ? 'kids (9-12)' : 'teenagers (13-18)'}.
 
 Return ONLY a valid JSON array with this exact structure (no markdown, no explanation):
 [
@@ -235,7 +264,7 @@ Make sure questions are different from these existing ones: ${existingQuestionTe
       );
     }
 
-    // Insert new questions
+    // Insert new questions with age tier
     const questionsToInsert = validQuestions.map((q: any) => ({
       question: q.question,
       options: q.options,
@@ -243,6 +272,7 @@ Make sure questions are different from these existing ones: ${existingQuestionTe
       category: q.category || randomCategory,
       difficulty: q.difficulty || targetDifficulty,
       points: pointsForDifficulty,
+      age_tier: ageTier,
     }));
 
     const { data: insertedQuestions, error: insertError } = await supabaseAdmin
@@ -255,13 +285,14 @@ Make sure questions are different from these existing ones: ${existingQuestionTe
       throw new Error("Failed to save questions");
     }
 
-    console.log(`Generated ${insertedQuestions?.length} new ${targetDifficulty} questions for profile ${profile.id}`);
+    console.log(`Generated ${insertedQuestions?.length} new ${targetDifficulty} ${ageTier} questions for profile ${profile.id}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         questionsAdded: insertedQuestions?.length || 0,
         difficulty: targetDifficulty,
+        ageTier: ageTier,
         performance: {
           accuracy: Math.round(performance.accuracyRate * 100),
           totalAttempts: performance.totalAttempts

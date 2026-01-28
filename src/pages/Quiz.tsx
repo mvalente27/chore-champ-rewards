@@ -46,6 +46,18 @@ const Quiz = () => {
     }
   }, [user, authLoading, navigate]);
 
+  // Calculate age tier from birth_date
+  const getAgeTier = (birthDate: string | null): string => {
+    if (!birthDate) return 'explorer';
+    const birth = new Date(birthDate);
+    const age = new Date().getFullYear() - birth.getFullYear();
+    if (age <= 8) return 'explorer';
+    if (age <= 12) return 'builder';
+    return 'achiever';
+  };
+
+  const ageTier = profile?.birth_date ? getAgeTier(profile.birth_date) : 'explorer';
+
   useEffect(() => {
     if (profile) {
       fetchQuestionsAndAttempts();
@@ -68,10 +80,11 @@ const Quiz = () => {
     setIsLoading(true);
 
     try {
-      // Fetch all questions
+      // Fetch questions filtered by age tier
       const { data: questionsData, error: questionsError } = await supabase
         .from('quiz_questions')
         .select('*')
+        .eq('age_tier', ageTier)
         .order('difficulty', { ascending: true });
 
       if (questionsError) throw questionsError;
@@ -264,10 +277,17 @@ const Quiz = () => {
             <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
               <Brain className="w-6 h-6 text-primary" />
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="text-xl font-bold text-foreground">Money Quiz</h1>
-              <p className="text-sm text-muted-foreground">Learn & earn Quest Coins!</p>
+              <p className="text-sm text-muted-foreground">
+                {ageTier === 'explorer' ? 'Fun money questions for you!' : 
+                 ageTier === 'builder' ? 'Learn & earn Quest Coins!' : 
+                 'Master your financial knowledge!'}
+              </p>
             </div>
+            <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full capitalize">
+              {ageTier === 'explorer' ? '🌟 Explorer' : ageTier === 'builder' ? '🔨 Builder' : '🚀 Achiever'}
+            </span>
           </div>
           
           {/* Stats */}
