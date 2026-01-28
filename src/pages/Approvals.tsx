@@ -8,6 +8,8 @@ import { Chore, Profile } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { awardXPForChore } from '@/hooks/useGamificationActions';
+import { showBadgeUnlockToast, showLevelUpToast } from '@/components/BadgeUnlockToast';
 
 const Approvals = () => {
   const [activeTab, setActiveTab] = useState('approvals');
@@ -115,8 +117,25 @@ const Approvals = () => {
 
       if (earningUpdateError) throw earningUpdateError;
 
+      // Award XP and check for badges
+      const gamificationResult = await awardXPForChore(chore.assigned_to);
+      
+      // Show level up notification if leveled up
+      if (gamificationResult.xpResult?.leveled_up) {
+        showLevelUpToast(gamificationResult.xpResult.new_level);
+      }
+      
+      // Show badge unlock notifications
+      gamificationResult.unlockedBadges.forEach(badge => {
+        setTimeout(() => showBadgeUnlockToast(badge), 500);
+      });
+
       setPendingChores(prev => prev.filter(c => c.id !== chore.id));
-      toast.success(`Approved! +${chore.reward_value} Quest Coins added to ${getKidName(chore.assigned_to)}'s balance 🪙`);
+      
+      const xpMessage = gamificationResult.xpAwarded > 0 
+        ? ` (+${gamificationResult.xpAwarded} XP)` 
+        : '';
+      toast.success(`Approved! +${chore.reward_value} Quest Coins${xpMessage} for ${getKidName(chore.assigned_to)} 🪙`);
     } catch (err) {
       console.error('Error approving chore:', err);
       toast.error('Failed to approve chore');
@@ -200,7 +219,7 @@ const Approvals = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-primary">${chore.reward_value}</span>
+                    <span className="text-lg font-bold text-primary">🪙 {chore.reward_value}</span>
                   </div>
                 </div>
 
