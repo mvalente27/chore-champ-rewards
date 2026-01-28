@@ -60,13 +60,9 @@ export default function StockMarket() {
 
   const fetchData = async () => {
     try {
-      // Filter stocks by age tier - show current tier and below
-      const tierOrder = ['explorer', 'builder', 'achiever'];
-      const tierIndex = tierOrder.indexOf(ageTier);
-      const allowedTiers = tierOrder.slice(0, tierIndex + 1);
-
+      // Filter stocks by age tier - show only current tier's content
       const [stocksRes, holdingsRes] = await Promise.all([
-        supabase.from("stocks").select("*").in("age_tier", allowedTiers).order("name"),
+        supabase.from("stocks").select("*").eq("age_tier", ageTier).order("name"),
         supabase.from("kid_stocks").select("*").eq("profile_id", profile!.id)
       ]);
 
