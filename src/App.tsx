@@ -15,6 +15,8 @@ import StockMarket from "./pages/StockMarket";
 import EntrepreneurQuest from "./pages/EntrepreneurQuest";
 import History from "./pages/History";
 import Install from "./pages/Install";
+import SkillTree from "./pages/SkillTree";
+import ParentAnalytics from "./pages/ParentAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/entrepreneur" element={<EntrepreneurQuest />} />
             <Route path="/history" element={<History />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/skills" element={<SkillTree />} />
+            <Route path="/analytics" element={<ParentAnalytics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

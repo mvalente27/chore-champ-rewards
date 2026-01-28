@@ -5,7 +5,7 @@ import { LevelProgress } from '@/components/LevelProgress';
 import { BadgeGrid } from '@/components/BadgeGrid';
 import { Leaderboard } from '@/components/Leaderboard';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal } from 'lucide-react';
+import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal, Zap, BarChart3 } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { useGamification } from '@/hooks/useGamification';
 
@@ -153,17 +153,54 @@ export function HomeView({
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
+
+          {/* Skill Tree */}
+          <button
+            onClick={() => navigate('/skills')}
+            className="w-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-xl p-4 flex items-center gap-3 hover:from-orange-500/15 hover:to-amber-500/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-orange-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Skill Tree</p>
+              <p className="text-sm text-muted-foreground">Unlock powerful abilities!</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
         </div>
       )}
 
-      {/* Pending Approvals Banner for Parents */}
-      {isParent && pendingApproval > 0 && (
-        <div className="bg-accent/20 border border-accent/30 rounded-xl p-4 flex items-center gap-3">
-          <span className="text-2xl">⏳</span>
-          <div>
-            <p className="font-semibold text-foreground">{pendingApproval} chore{pendingApproval > 1 ? 's' : ''} waiting for approval</p>
-            <p className="text-sm text-muted-foreground">Review and approve completed chores</p>
-          </div>
+      {/* Parent Quick Actions */}
+      {isParent && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
+          
+          {/* Analytics Dashboard */}
+          <button
+            onClick={() => navigate('/analytics')}
+            className="w-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3 hover:from-primary/15 hover:to-accent/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Kids Analytics</p>
+              <p className="text-sm text-muted-foreground">Track progress & Financial IQ</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Pending Approvals Banner */}
+          {pendingApproval > 0 && (
+            <div className="bg-accent/20 border border-accent/30 rounded-xl p-4 flex items-center gap-3">
+              <span className="text-2xl">⏳</span>
+              <div>
+                <p className="font-semibold text-foreground">{pendingApproval} chore{pendingApproval > 1 ? 's' : ''} waiting for approval</p>
+                <p className="text-sm text-muted-foreground">Review and approve completed chores</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -351,6 +351,45 @@ export type Database = {
           },
         ]
       }
+      kid_skills: {
+        Row: {
+          id: string
+          is_active: boolean
+          profile_id: string
+          skill_id: string
+          unlocked_at: string
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean
+          profile_id: string
+          skill_id: string
+          unlocked_at?: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean
+          profile_id?: string
+          skill_id?: string
+          unlocked_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_skills_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kid_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kid_stocks: {
         Row: {
           created_at: string
@@ -691,6 +730,56 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          category: string
+          cost: number
+          created_at: string
+          description: string | null
+          effect_type: string
+          effect_value: number
+          icon: string
+          id: string
+          name: string
+          prerequisite_skill_id: string | null
+          unlock_level: number
+        }
+        Insert: {
+          category?: string
+          cost?: number
+          created_at?: string
+          description?: string | null
+          effect_type: string
+          effect_value?: number
+          icon?: string
+          id?: string
+          name: string
+          prerequisite_skill_id?: string | null
+          unlock_level?: number
+        }
+        Update: {
+          category?: string
+          cost?: number
+          created_at?: string
+          description?: string | null
+          effect_type?: string
+          effect_value?: number
+          icon?: string
+          id?: string
+          name?: string
+          prerequisite_skill_id?: string | null
+          unlock_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_prerequisite_skill_id_fkey"
+            columns: ["prerequisite_skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
             referencedColumns: ["id"]
           },
         ]

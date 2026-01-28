@@ -19,6 +19,8 @@ export interface Profile {
   avatar_url: string | null;
   total_earnings: number;
   birth_date: string | null;
+  level: number;
+  xp: number;
   created_at: string;
   updated_at: string;
 }
