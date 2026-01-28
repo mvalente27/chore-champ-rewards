@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       businesses: {
         Row: {
+          age_tier: string | null
           base_cost: number
           base_income: number
           category: string
@@ -27,6 +28,7 @@ export type Database = {
           unlock_level: number
         }
         Insert: {
+          age_tier?: string | null
           base_cost?: number
           base_income?: number
           category?: string
@@ -38,6 +40,7 @@ export type Database = {
           unlock_level?: number
         }
         Update: {
+          age_tier?: string | null
           base_cost?: number
           base_income?: number
           category?: string
@@ -450,6 +453,7 @@ export type Database = {
       }
       quiz_questions: {
         Row: {
+          age_tier: string | null
           category: string
           correct_answer: number
           created_at: string
@@ -460,6 +464,7 @@ export type Database = {
           question: string
         }
         Insert: {
+          age_tier?: string | null
           category?: string
           correct_answer: number
           created_at?: string
@@ -470,6 +475,7 @@ export type Database = {
           question: string
         }
         Update: {
+          age_tier?: string | null
           category?: string
           correct_answer?: number
           created_at?: string
@@ -613,6 +619,7 @@ export type Database = {
       }
       stocks: {
         Row: {
+          age_tier: string | null
           created_at: string
           current_price: number
           description: string | null
@@ -624,6 +631,7 @@ export type Database = {
           volatility: number
         }
         Insert: {
+          age_tier?: string | null
           created_at?: string
           current_price?: number
           description?: string | null
@@ -635,6 +643,7 @@ export type Database = {
           volatility?: number
         }
         Update: {
+          age_tier?: string | null
           created_at?: string
           current_price?: number
           description?: string | null
