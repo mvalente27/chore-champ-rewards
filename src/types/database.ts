@@ -18,6 +18,7 @@ export interface Profile {
   type: ProfileType;
   avatar_url: string | null;
   total_earnings: number;
+  birth_date: string | null;
   created_at: string;
   updated_at: string;
 }

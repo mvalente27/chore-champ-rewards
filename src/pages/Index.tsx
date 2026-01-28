@@ -269,7 +269,7 @@ const Index = () => {
     }
   };
 
-  const handleAddKid = async (name: string, avatar: string) => {
+  const handleAddKid = async (name: string, avatar: string, birthDate: string | null) => {
     if (!profile?.household_id) return;
 
     try {
@@ -280,6 +280,7 @@ const Index = () => {
           name: name,
           type: 'kid',
           avatar_url: avatar,
+          birth_date: birthDate,
         })
         .select()
         .single();
@@ -295,17 +296,17 @@ const Index = () => {
     }
   };
 
-  const handleEditKid = async (id: string, name: string, avatar: string) => {
+  const handleEditKid = async (id: string, name: string, avatar: string, birthDate: string | null) => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ name, avatar_url: avatar })
+        .update({ name, avatar_url: avatar, birth_date: birthDate })
         .eq('id', id);
 
       if (error) throw error;
 
       setHouseholdProfiles(householdProfiles.map(p => 
-        p.id === id ? { ...p, name, avatar_url: avatar } : p
+        p.id === id ? { ...p, name, avatar_url: avatar, birth_date: birthDate } : p
       ));
       toast.success('Kid profile updated! ✨');
     } catch (err) {
