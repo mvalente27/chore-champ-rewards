@@ -8,6 +8,7 @@ import { Loader2, Plus, ShoppingCart, Coins, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { fireBigConfetti } from '@/lib/confetti';
 
 interface Reward {
   id: string;
@@ -123,6 +124,9 @@ const Rewards = () => {
       });
 
       if (error) throw error;
+
+      // Big celebration!
+      fireBigConfetti();
 
       toast.success(
         <div className="flex items-center gap-2">

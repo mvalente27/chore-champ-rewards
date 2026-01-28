@@ -16,7 +16,9 @@ import { Chore as LegacyChore } from '@/types/chores';
 import { Chore, Profile, ChoreStatus } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useStreak } from '@/hooks/useStreak';
 import { supabase } from '@/integrations/supabase/client';
+import { fireConfetti } from '@/lib/confetti';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -37,6 +39,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { user, profile, isParent, signOut, isLoading: authLoading } = useAuth();
+  const { streak } = useStreak(profile?.id);
   const navigate = useNavigate();
 
   // Redirect to auth if not logged in
@@ -176,9 +179,12 @@ const Index = () => {
         c.id === id ? { ...c, status: 'pending_verification' as ChoreStatus, completed_at: new Date().toISOString() } : c
       ));
 
+      // Celebrate with confetti!
+      fireConfetti();
+
       toast.success(
         <div className="flex items-center gap-2">
-          <span className="text-2xl">📝</span>
+          <span className="text-2xl">🎉</span>
           <span><strong>{chore.title}</strong> submitted! Waiting for parent approval.</span>
         </div>
       );
@@ -451,6 +457,7 @@ const Index = () => {
             completedToday={completedToday}
             pendingChores={pendingChores}
             pendingApproval={pendingApproval}
+            currentStreak={streak}
             onAddKid={() => setIsAddKidModalOpen(true)}
             onSetupKidLogin={(kid) => {
               setSelectedKidForLogin(kid);
@@ -494,6 +501,7 @@ const Index = () => {
             completedToday={completedToday}
             pendingChores={pendingChores}
             pendingApproval={pendingApproval}
+            currentStreak={streak}
             onAddKid={() => setIsAddKidModalOpen(true)}
             onSetupKidLogin={(kid) => {
               setSelectedKidForLogin(kid);
