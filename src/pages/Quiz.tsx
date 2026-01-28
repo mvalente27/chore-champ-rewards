@@ -8,6 +8,8 @@ import { Loader2, Trophy, Brain, ArrowLeft, RefreshCw, Sparkles } from 'lucide-r
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { awardXPForQuiz } from '@/hooks/useGamificationActions';
+import { showBadgeUnlockToast, showLevelUpToast } from '@/components/BadgeUnlockToast';
 
 interface QuizQuestion {
   id: string;
@@ -193,6 +195,17 @@ const Quiz = () => {
           .eq('id', profile.id);
 
         if (updateError) console.error('Error updating earnings:', updateError);
+        
+        // Award XP and check for badges
+        const gamificationResult = await awardXPForQuiz(profile.id, true);
+        
+        if (gamificationResult.xpResult?.leveled_up) {
+          showLevelUpToast(gamificationResult.xpResult.new_level);
+        }
+        
+        gamificationResult.unlockedBadges.forEach(badge => {
+          setTimeout(() => showBadgeUnlockToast(badge), 300);
+        });
       }
 
       // Check if all questions are now answered - award daily bonus
