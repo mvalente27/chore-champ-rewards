@@ -1,7 +1,13 @@
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Coins, Calendar, Home, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, User, Coins, Calendar, Home, Copy, Check, Download, Smartphone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 interface Profile {
   id: string;
@@ -26,8 +32,41 @@ function generateFamilyCode(householdId: string): string {
 }
 
 export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) {
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const familyCode = generateFamilyCode(profile.household_id);
+
+  // Check if app is already installed and listen for install prompt
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setIsInstalled(true);
+        toast.success('App installed successfully!');
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Navigate to install page for instructions
+      navigate('/install');
+    }
+  };
 
   const handleCopyFamilyCode = async () => {
     try {
@@ -108,6 +147,29 @@ export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) 
           </p>
         </div>
       </div>
+
+      {/* Install App Section */}
+      {!isInstalled && (
+        <div className="bg-gradient-to-r from-secondary/10 to-secondary/5 rounded-2xl p-4 border border-secondary/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center">
+              <Smartphone className="w-5 h-5 text-secondary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-foreground">Install ChoreQuest</p>
+              <p className="text-sm text-muted-foreground">Add to your home screen for the best experience</p>
+            </div>
+            <Button
+              onClick={handleInstallClick}
+              size="sm"
+              className="bg-secondary hover:bg-secondary/90"
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Install
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Account Section */}
       <div className="space-y-3">
