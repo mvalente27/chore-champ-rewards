@@ -10,10 +10,8 @@ verify_jwt = false
 
 [functions.generate-quiz-questions]
 enabled = true
-verify_jwt = true
-
-
 verify_jwt = false
 
-[functions.lookup-kid-login]
+[functions.update-kid-password]
+enabled = true
 verify_jwt = false
