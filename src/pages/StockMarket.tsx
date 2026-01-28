@@ -40,16 +40,33 @@ export default function StockMarket() {
     }
   }, [user, authLoading, navigate]);
 
+  // Calculate age tier from birth_date
+  const getAgeTier = (birthDate: string | null): string => {
+    if (!birthDate) return 'explorer';
+    const birth = new Date(birthDate);
+    const age = new Date().getFullYear() - birth.getFullYear();
+    if (age <= 8) return 'explorer';
+    if (age <= 12) return 'builder';
+    return 'achiever';
+  };
+
+  const ageTier = profile?.birth_date ? getAgeTier(profile.birth_date) : 'explorer';
+
   useEffect(() => {
     if (profile) {
       fetchData();
     }
-  }, [profile]);
+  }, [profile, ageTier]);
 
   const fetchData = async () => {
     try {
+      // Filter stocks by age tier - show current tier and below
+      const tierOrder = ['explorer', 'builder', 'achiever'];
+      const tierIndex = tierOrder.indexOf(ageTier);
+      const allowedTiers = tierOrder.slice(0, tierIndex + 1);
+
       const [stocksRes, holdingsRes] = await Promise.all([
-        supabase.from("stocks").select("*").order("name"),
+        supabase.from("stocks").select("*").in("age_tier", allowedTiers).order("name"),
         supabase.from("kid_stocks").select("*").eq("profile_id", profile!.id)
       ]);
 
@@ -216,15 +233,22 @@ export default function StockMarket() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-4">
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-4">
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-white hover:bg-white/20">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
             <h1 className="text-xl font-bold">📈 Stock Market</h1>
-            <p className="text-sm opacity-90">Invest your coins and watch them grow!</p>
+            <p className="text-sm opacity-90">
+              {ageTier === 'explorer' ? 'Fun companies to invest in!' : 
+               ageTier === 'builder' ? 'Invest your coins and watch them grow!' : 
+               'Build your investment portfolio!'}
+            </p>
           </div>
+          <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full capitalize">
+            {ageTier === 'explorer' ? '🌟 Explorer' : ageTier === 'builder' ? '🔨 Builder' : '🚀 Achiever'}
+          </span>
         </div>
         
         <div className="grid grid-cols-3 gap-2 text-center">

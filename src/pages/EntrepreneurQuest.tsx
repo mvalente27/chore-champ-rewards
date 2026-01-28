@@ -44,16 +44,33 @@ export default function EntrepreneurQuest() {
     }
   }, [user, authLoading, navigate]);
 
+  // Calculate age tier from birth_date
+  const getAgeTier = (birthDate: string | null): string => {
+    if (!birthDate) return 'explorer';
+    const birth = new Date(birthDate);
+    const age = new Date().getFullYear() - birth.getFullYear();
+    if (age <= 8) return 'explorer';
+    if (age <= 12) return 'builder';
+    return 'achiever';
+  };
+
+  const ageTier = profile?.birth_date ? getAgeTier(profile.birth_date) : 'explorer';
+
   useEffect(() => {
     if (profile) {
       fetchData();
     }
-  }, [profile]);
+  }, [profile, ageTier]);
 
   const fetchData = async () => {
     try {
+      // Filter businesses by age tier - show current tier and below
+      const tierOrder = ['explorer', 'builder', 'achiever'];
+      const tierIndex = tierOrder.indexOf(ageTier);
+      const allowedTiers = tierOrder.slice(0, tierIndex + 1);
+
       const [businessRes, ownedRes] = await Promise.all([
-        supabase.from("businesses").select("*").order("unlock_level").order("base_cost"),
+        supabase.from("businesses").select("*").in("age_tier", allowedTiers).order("unlock_level").order("base_cost"),
         supabase.from("kid_businesses").select("*").eq("profile_id", profile!.id)
       ]);
 
@@ -243,8 +260,15 @@ export default function EntrepreneurQuest() {
           </Button>
           <div>
             <h1 className="text-xl font-bold">🏪 Entrepreneur Quest</h1>
-            <p className="text-sm opacity-90">Build your business empire!</p>
+            <p className="text-sm opacity-90">
+              {ageTier === 'explorer' ? 'Start your first business!' : 
+               ageTier === 'builder' ? 'Build your business empire!' : 
+               'Become a business mogul!'}
+            </p>
           </div>
+          <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full capitalize">
+            {ageTier === 'explorer' ? '🌟 Explorer' : ageTier === 'builder' ? '🔨 Builder' : '🚀 Achiever'}
+          </span>
         </div>
         
         <div className="grid grid-cols-2 gap-2 mb-3">
