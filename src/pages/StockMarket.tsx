@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BottomNav } from "@/components/BottomNav";
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { StockPriceChart } from "@/components/StockPriceChart";
 
 interface Stock {
   id: string;
@@ -297,7 +298,12 @@ export default function StockMarket() {
                       </div>
                     </div>
                     
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <StockPriceChart 
+                        stockId={stock.id} 
+                        currentPrice={stock.current_price} 
+                        previousPrice={stock.previous_price} 
+                      />
                       <p className="font-bold text-lg">{Math.round(stock.current_price)} 🪙</p>
                       <div className={`flex items-center justify-end gap-1 text-sm ${
                         change > 0 ? 'text-green-600' : change < 0 ? 'text-red-600' : 'text-muted-foreground'
