@@ -12,6 +12,7 @@ interface HomeViewProps {
   completedToday: number;
   pendingChores: number;
   pendingApproval: number;
+  currentStreak: number;
   onAddKid: () => void;
   onSetupKidLogin?: (kid: Profile) => void;
   onEditKid?: (kid: Profile) => void;
@@ -24,6 +25,7 @@ export function HomeView({
   completedToday,
   pendingChores,
   pendingApproval,
+  currentStreak,
   onAddKid,
   onSetupKidLogin,
   onEditKid,
@@ -58,7 +60,7 @@ export function HomeView({
       <StatsGrid 
         completedToday={completedToday}
         pendingChores={pendingChores}
-        currentStreak={5}
+        currentStreak={currentStreak}
         totalStars={completedToday * 2}
       />
 
