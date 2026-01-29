@@ -63,6 +63,28 @@ workflows:
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
       
+      - name: Configure release signing
+        script: |
+          # Add signing config to app/build.gradle
+          cat >> android/app/build.gradle << 'EOF'
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv("CM_KEYSTORE_PATH") ?: "/tmp/keystore.jks")
+                      storePassword System.getenv("CM_KEYSTORE_PASSWORD") ?: ""
+                      keyAlias System.getenv("CM_KEY_ALIAS") ?: ""
+                      keyPassword System.getenv("CM_KEY_PASSWORD") ?: ""
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          EOF
+      
       - name: Build Android Release AAB
         script: |
           cd android
