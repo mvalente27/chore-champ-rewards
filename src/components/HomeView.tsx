@@ -5,7 +5,7 @@ import { LevelProgress } from '@/components/LevelProgress';
 import { BadgeGrid } from '@/components/BadgeGrid';
 import { Leaderboard } from '@/components/Leaderboard';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal, Zap, BarChart3 } from 'lucide-react';
+import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal, Zap, BarChart3, Gift } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { useGamification } from '@/hooks/useGamification';
 
@@ -168,6 +168,21 @@ export function HomeView({
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
+
+          {/* Rewards Store */}
+          <button
+            onClick={() => navigate('/rewards')}
+            className="w-full bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-xl p-4 flex items-center gap-3 hover:from-pink-500/15 hover:to-rose-500/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
+              <Gift className="w-5 h-5 text-pink-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Rewards Store</p>
+              <p className="text-sm text-muted-foreground">Spend your Quest Coins!</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
         </div>
       )}
 
@@ -187,6 +202,21 @@ export function HomeView({
             <div className="flex-1 text-left">
               <p className="font-semibold text-foreground">Kids Analytics</p>
               <p className="text-sm text-muted-foreground">Track progress & Financial IQ</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Rewards Store */}
+          <button
+            onClick={() => navigate('/rewards')}
+            className="w-full bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-xl p-4 flex items-center gap-3 hover:from-pink-500/15 hover:to-rose-500/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
+              <Gift className="w-5 h-5 text-pink-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Rewards Store</p>
+              <p className="text-sm text-muted-foreground">Add rewards for your kids</p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
