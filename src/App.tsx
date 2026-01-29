@@ -18,6 +18,7 @@ import Install from "./pages/Install";
 import SkillTree from "./pages/SkillTree";
 import ParentAnalytics from "./pages/ParentAnalytics";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/install" element={<Install />} />
             <Route path="/skills" element={<SkillTree />} />
             <Route path="/analytics" element={<ParentAnalytics />} />
+            <Route path="/privacy" element={<Privacy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
