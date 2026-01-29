@@ -12,7 +12,7 @@ workflows:
       vars:
         PACKAGE_NAME: "app.lovable.063c78be35aa476f86045287f25be1f2"
         ADMOB_APP_ID: "ca-app-pub-4921015020988476~7394189413"
-      node: 18
+      node: 22.13.0
       java: 17
     
     triggering:
