@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal, Zap, BarChart3, Gift } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { useGamification } from '@/hooks/useGamification';
+import { SmartAvatar } from '@/components/avatar';
 
 interface HomeViewProps {
   profile: Profile;
@@ -262,7 +263,9 @@ export function HomeView({
                     key={kid.id}
                     className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50"
                   >
-                    <span className="text-2xl">{kid.avatar_url || '👧'}</span>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                      <SmartAvatar avatarData={kid.avatar_url} size={40} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground truncate">{kid.name}</p>
                       <p className="text-xs text-muted-foreground">{kid.total_earnings} Quest Coins</p>
