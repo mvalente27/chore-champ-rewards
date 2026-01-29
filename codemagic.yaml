@@ -46,7 +46,9 @@ workflows:
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST_PATH" ]; then
             if ! grep -q "com.google.android.gms.ads.APPLICATION_ID" "$MANIFEST_PATH"; then
-              sed -i 's|</application>|    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="'"$ADMOB_APP_ID"'"/>\n    </application>|' "$MANIFEST_PATH"
+              # Use Perl for cross-platform (macOS/Linux) safe in-place edit.
+              # Insert the AdMob meta-data line right before </application>.
+              /usr/bin/perl -0777 -i -pe 's#</application>#    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="'"$ADMOB_APP_ID"'"/>\n    </application>#s' "$MANIFEST_PATH"
             fi
           else
             echo "Error: AndroidManifest.xml not found"
