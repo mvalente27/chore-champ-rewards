@@ -73,6 +73,23 @@ export const BACKGROUNDS = [
   { id: 'gradient2', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', name: 'Candy' },
 ];
 
+/**
+ * Checks if a string is a serialized avatar configuration (JSON format)
+ */
+export function isSerializedAvatar(data: string): boolean {
+  if (!data) return false;
+  // New avatar configs start with { and contain expected keys
+  if (data.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(data);
+      return parsed && typeof parsed.skinTone === 'string';
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 export interface AvatarConfig {
   skinTone: string;
   hairStyle: string;

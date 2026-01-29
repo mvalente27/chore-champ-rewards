@@ -1,6 +1,7 @@
 // Re-export avatar components for easy imports
 export { AvatarRenderer } from './AvatarRenderer';
 export { AvatarBuilderNew } from './AvatarBuilderNew';
+export { SmartAvatar } from './SmartAvatar';
 export { 
   type AvatarConfig,
   DEFAULT_AVATAR,
@@ -13,4 +14,5 @@ export {
   BACKGROUNDS,
   serializeAvatar,
   deserializeAvatar,
+  isSerializedAvatar,
 } from './AvatarParts';

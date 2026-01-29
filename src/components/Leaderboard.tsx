@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Trophy, Medal, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SmartAvatar } from '@/components/avatar';
 
 interface LeaderboardEntry {
   id: string;
@@ -137,8 +138,8 @@ export function Leaderboard({ householdId, currentProfileId }: LeaderboardProps)
             )}
           >
             <div className="w-6 flex justify-center">{getRankIcon(index)}</div>
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-lg">
-              {entry.avatar_url || '👧'}
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+              <SmartAvatar avatarData={entry.avatar_url} size={32} />
             </div>
             <div className="flex-1 min-w-0">
               <p className={cn(
