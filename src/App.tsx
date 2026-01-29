@@ -19,6 +19,8 @@ import SkillTree from "./pages/SkillTree";
 import ParentAnalytics from "./pages/ParentAnalytics";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
+import DeleteAccount from "./pages/DeleteAccount";
+import DeleteData from "./pages/DeleteData";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,8 @@ const App = () => (
             <Route path="/skills" element={<SkillTree />} />
             <Route path="/analytics" element={<ParentAnalytics />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/delete-account" element={<DeleteAccount />} />
+            <Route path="/delete-data" element={<DeleteData />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
