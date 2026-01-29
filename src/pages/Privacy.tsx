@@ -6,8 +6,8 @@ export default function Privacy() {
   const navigate = useNavigate();
   const lastUpdated = "January 29, 2025";
   const appName = "ChoreQuest";
-  const developerName = "ChoreQuest Team";
-  const contactEmail = "privacy@chorequest.app";
+  const developerName = "ChoreQuest";
+  const contactEmail = "support@chorequest.app"; // Update this with your real email
 
   return (
     <div className="min-h-screen bg-background">
