@@ -14,6 +14,7 @@ workflows:
         ADMOB_APP_ID: "ca-app-pub-4921015020988476~7394189413"
       node: 22.13.0
       java: 17
+      xcode: latest
     
     triggering:
       events:
@@ -33,7 +34,7 @@ workflows:
       
       - name: Add Android platform
         script: |
-          npx cap add android || true
+          npx cap add android
       
       - name: Sync Capacitor
         script: |
