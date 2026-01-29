@@ -127,7 +127,7 @@ https://kid-earn-reward.lovable.app/privacy
 ## Contact Email
 
 ```
-support@chorequest.app
+michael.valente1@gmail.com
 ```
 
 **⚠️ IMPORTANT:** Before publishing, you MUST:
