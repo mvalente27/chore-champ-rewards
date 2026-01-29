@@ -3,7 +3,7 @@ import { LogOut, User, Coins, Calendar, Home, Copy, Check, Download, Smartphone,
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { AvatarBuilder } from '@/components/AvatarBuilder';
+import { AvatarBuilderNew, AvatarRenderer, deserializeAvatar } from '@/components/avatar';
 import { supabase } from '@/integrations/supabase/client';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -108,9 +108,13 @@ export function ProfileView({ profile, isParent, onSignOut, onAvatarUpdate }: Pr
       <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-3xl">
-              {currentAvatar || (isParent ? '👨‍👩‍👧' : '👧')}
-            </div>
+            {!isParent && currentAvatar?.startsWith('{') ? (
+              <AvatarRenderer config={deserializeAvatar(currentAvatar)} size={64} />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-3xl">
+                {currentAvatar || (isParent ? '👨‍👩‍👧' : '👧')}
+              </div>
+            )}
             {!isParent && (
               <button
                 onClick={() => setIsAvatarBuilderOpen(true)}
@@ -227,12 +231,11 @@ export function ProfileView({ profile, isParent, onSignOut, onAvatarUpdate }: Pr
 
       {/* Avatar Builder for Kids */}
       {!isParent && (
-        <AvatarBuilder
+        <AvatarBuilderNew
           isOpen={isAvatarBuilderOpen}
           onClose={() => setIsAvatarBuilderOpen(false)}
-          currentAvatar={currentAvatar || '😊'}
+          currentAvatar={currentAvatar || ''}
           onSave={handleAvatarSave}
-          coins={profile.total_earnings}
         />
       )}
     </div>
