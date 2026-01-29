@@ -14,7 +14,7 @@ workflows:
         PACKAGE_NAME: "com.lovable.chorequest"
         ADMOB_APP_ID: "ca-app-pub-4921015020988476~7394189413"
       node: 22.13.0
-      java: 17
+      java: 21
       xcode: latest
     
     triggering:
