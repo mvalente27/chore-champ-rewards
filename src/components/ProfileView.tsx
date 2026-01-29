@@ -85,11 +85,15 @@ export function ProfileView({ profile, isParent, onSignOut, onAvatarUpdate }: Pr
   };
 
   const handleAvatarSave = async (newAvatar: string) => {
+    console.log('Saving avatar:', { profileId: profile.id, newAvatar: newAvatar.substring(0, 50) + '...' });
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ avatar_url: newAvatar })
-        .eq('id', profile.id);
+        .eq('id', profile.id)
+        .select();
+
+      console.log('Avatar save result:', { data, error });
 
       if (error) throw error;
 
