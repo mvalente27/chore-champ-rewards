@@ -1,7 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.063c78be35aa476f86045287f25be1f2',
+  // Must be a valid Java package id for Android/iOS (no segment may start with a number)
+  appId: 'com.lovable.chorequest',
   appName: 'ChoreQuest',
   webDir: 'dist',
   server: {
