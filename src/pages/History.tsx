@@ -2,13 +2,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Calendar, TrendingUp, Gift, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, startOfMonth, startOfYear, isAfter } from 'date-fns';
+import { SmartAvatar } from '@/components/avatar';
 
 interface HistoryItem {
   id: string;
@@ -18,7 +18,7 @@ interface HistoryItem {
   amount: number;
   date: Date;
   kidName?: string;
-  kidAvatar?: string;
+  kidAvatar?: string | null;
 }
 
 interface Profile {
@@ -100,7 +100,7 @@ const History = () => {
           amount: c.reward_value,
           date: new Date(c.completed_at!),
           kidName: kid?.name,
-          kidAvatar: kid?.avatar_url || '👧'
+          kidAvatar: kid?.avatar_url || null
         };
       });
 
@@ -115,7 +115,7 @@ const History = () => {
           amount: r.cost,
           date: new Date(r.created_at),
           kidName: kid?.name,
-          kidAvatar: kid?.avatar_url || '👧'
+          kidAvatar: kid?.avatar_url || null
         };
       });
 
@@ -248,7 +248,9 @@ const History = () => {
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {isParent && item.kidName && (
                         <>
-                          <span>{item.kidAvatar}</span>
+                          <span className="w-4 h-4 inline-flex items-center justify-center">
+                            <SmartAvatar avatarData={item.kidAvatar || null} size={16} />
+                          </span>
                           <span>{item.kidName}</span>
                           <span>•</span>
                         </>
