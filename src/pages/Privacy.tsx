@@ -7,7 +7,7 @@ export default function Privacy() {
   const lastUpdated = "January 29, 2025";
   const appName = "ChoreQuest";
   const developerName = "ChoreQuest";
-  const contactEmail = "support@chorequest.app"; // Update this with your real email
+  const contactEmail = "michael.valente1@gmail.com";
 
   return (
     <div className="min-h-screen bg-background">
