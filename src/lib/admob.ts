@@ -1,18 +1,21 @@
 import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, AdMobBannerSize, InterstitialAdPluginEvents, AdMobRewardItem, RewardAdPluginEvents } from '@capacitor-community/admob';
 
-// Test Ad Unit IDs (replace with your real IDs for production)
+// Your AdMob App ID: ca-app-pub-4921015020988476~7394189413
+// This goes in AndroidManifest.xml, not here
+
+// Production Ad Unit IDs
 const AD_UNIT_IDS = {
-  // Android test IDs
+  // Android - Your real IDs
   android: {
-    banner: 'ca-app-pub-3940256099942544/6300978111',
-    interstitial: 'ca-app-pub-3940256099942544/1033173712',
-    rewarded: 'ca-app-pub-3940256099942544/5224354917',
+    banner: '', // Create in AdMob if needed
+    interstitial: '', // Create in AdMob if needed
+    rewarded: 'ca-app-pub-4921015020988476/7959932097', // Your rewarded ad unit
   },
-  // iOS test IDs
+  // iOS - Create these in AdMob when you add iOS support
   ios: {
-    banner: 'ca-app-pub-3940256099942544/2934735716',
-    interstitial: 'ca-app-pub-3940256099942544/4411468910',
-    rewarded: 'ca-app-pub-3940256099942544/1712485313',
+    banner: '',
+    interstitial: '',
+    rewarded: '',
   },
 };
 
@@ -30,8 +33,8 @@ export async function initializeAdMob(): Promise<void> {
   
   try {
     await AdMob.initialize({
-      // For testing, set to true. Set to false in production.
-      initializeForTesting: true, // Set to false in production
+      // Set to false for production with real ads
+      initializeForTesting: false,
     });
     isAdMobInitialized = true;
     console.log('AdMob initialized successfully');
@@ -101,7 +104,7 @@ export async function showInterstitialAd(): Promise<boolean> {
     // Prepare the ad
     await AdMob.prepareInterstitial({
       adId: adUnitIds.interstitial,
-      isTesting: true, // Set to false in production
+      isTesting: false,
     });
 
     // Show the ad
@@ -147,7 +150,7 @@ export async function showRewardedAd(): Promise<AdMobRewardItem | null> {
       // Prepare the ad
       await AdMob.prepareRewardVideoAd({
         adId: adUnitIds.rewarded,
-        isTesting: true, // Set to false in production
+        isTesting: false,
       });
 
       // Show the ad
