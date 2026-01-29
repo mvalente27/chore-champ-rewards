@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Coins, Calendar, Home, Copy, Check, Download, Smartphone } from 'lucide-react';
+import { LogOut, User, Coins, Calendar, Home, Copy, Check, Download, Smartphone, Palette } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { AvatarBuilder } from '@/components/AvatarBuilder';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -24,6 +26,7 @@ interface ProfileViewProps {
   profile: Profile;
   isParent: boolean;
   onSignOut: () => void;
+  onAvatarUpdate?: (newAvatar: string) => void;
 }
 
 // Generate family code from household ID (must match edge function logic)
@@ -31,11 +34,13 @@ function generateFamilyCode(householdId: string): string {
   return householdId.replace(/-/g, '').slice(0, 6).toUpperCase();
 }
 
-export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) {
+export function ProfileView({ profile, isParent, onSignOut, onAvatarUpdate }: ProfileViewProps) {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isAvatarBuilderOpen, setIsAvatarBuilderOpen] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState(profile.avatar_url || '');
   const familyCode = generateFamilyCode(profile.household_id);
 
   // Check if app is already installed and listen for install prompt
@@ -79,15 +84,43 @@ export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) 
     }
   };
 
+  const handleAvatarSave = async (newAvatar: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: newAvatar })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+
+      setCurrentAvatar(newAvatar);
+      onAvatarUpdate?.(newAvatar);
+      toast.success('Avatar updated! 🎨');
+    } catch (err) {
+      console.error('Error updating avatar:', err);
+      toast.error('Failed to update avatar');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Profile Header */}
       <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-3xl">
-            {profile.avatar_url || (isParent ? '👨‍👩‍👧' : '👧')}
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-3xl">
+              {currentAvatar || (isParent ? '👨‍👩‍👧' : '👧')}
+            </div>
+            {!isParent && (
+              <button
+                onClick={() => setIsAvatarBuilderOpen(true)}
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
+              >
+                <Palette className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          <div>
+          <div className="flex-1">
             <h2 className="text-xl font-bold text-foreground">{profile.name}</h2>
             <p className="text-sm text-muted-foreground capitalize">{profile.type}</p>
           </div>
@@ -191,6 +224,17 @@ export function ProfileView({ profile, isParent, onSignOut }: ProfileViewProps) 
           </button>
         </div>
       </div>
+
+      {/* Avatar Builder for Kids */}
+      {!isParent && (
+        <AvatarBuilder
+          isOpen={isAvatarBuilderOpen}
+          onClose={() => setIsAvatarBuilderOpen(false)}
+          currentAvatar={currentAvatar || '😊'}
+          onSave={handleAvatarSave}
+          coins={profile.total_earnings}
+        />
+      )}
     </div>
   );
 }
