@@ -27,24 +27,29 @@ workflows:
         script: |
           npm install
       
-      - name: Add Android platform
-        script: |
-          npx cap add android || true
-      
-      - name: Configure AdMob in AndroidManifest
-        script: |
-          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          if ! grep -q "com.google.android.gms.ads.APPLICATION_ID" "$MANIFEST_PATH"; then
-            sed -i '' 's|</application>|    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="'"$ADMOB_APP_ID"'"/>\n    </application>|' "$MANIFEST_PATH"
-          fi
-      
       - name: Build web assets
         script: |
           npm run build
       
+      - name: Add Android platform
+        script: |
+          npx cap add android || true
+      
       - name: Sync Capacitor
         script: |
           npx cap sync android
+      
+      - name: Configure AdMob in AndroidManifest
+        script: |
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_PATH" ]; then
+            if ! grep -q "com.google.android.gms.ads.APPLICATION_ID" "$MANIFEST_PATH"; then
+              sed -i 's|</application>|    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="'"$ADMOB_APP_ID"'"/>\n    </application>|' "$MANIFEST_PATH"
+            fi
+          else
+            echo "Error: AndroidManifest.xml not found"
+            exit 1
+          fi
       
       - name: Set Android SDK location
         script: |
