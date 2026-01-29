@@ -1,5 +1,6 @@
 import { Bell, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SmartAvatar } from '@/components/avatar/SmartAvatar';
 
 interface HeaderProps {
   userName?: string;
@@ -11,8 +12,8 @@ export function Header({ userName, userAvatar }: HeaderProps) {
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 py-3">
       <div className="flex items-center justify-between max-w-md mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center text-2xl overflow-hidden">
-            {userAvatar || '👋'}
+          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+            <SmartAvatar avatarData={userAvatar || null} size={44} />
           </div>
           <div>
             <p className="text-sm text-muted-foreground font-medium">Welcome back,</p>
