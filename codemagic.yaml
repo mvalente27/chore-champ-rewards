@@ -45,9 +45,13 @@ workflows:
         script: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST_PATH" ]; then
+            # Add AD_ID permission for Android 13+ (required for AdMob)
+            if ! grep -q "com.google.android.gms.permission.AD_ID" "$MANIFEST_PATH"; then
+              /usr/bin/perl -0777 -i -pe 's#<manifest #<manifest xmlns:tools="http://schemas.android.com/tools" #s unless /<manifest.*xmlns:tools/' "$MANIFEST_PATH"
+              /usr/bin/perl -0777 -i -pe 's#(<manifest[^>]*>)#$1\n    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>#s' "$MANIFEST_PATH"
+            fi
+            # Add AdMob App ID meta-data
             if ! grep -q "com.google.android.gms.ads.APPLICATION_ID" "$MANIFEST_PATH"; then
-              # Use Perl for cross-platform (macOS/Linux) safe in-place edit.
-              # Insert the AdMob meta-data line right before </application>.
               /usr/bin/perl -0777 -i -pe 's#</application>#    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="'"$ADMOB_APP_ID"'"/>\n    </application>#s' "$MANIFEST_PATH"
             fi
           else
