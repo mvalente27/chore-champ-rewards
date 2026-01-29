@@ -78,7 +78,7 @@ Perfect for families who want to:
 
 Download ChoreQuest today and turn chores into an adventure! 🚀
 
-Questions? Contact us at support@chorequest.app
+Questions? Contact us at michael.valente1@gmail.com
 ```
 
 ---
@@ -105,14 +105,13 @@ chores, kids, money, allowance, rewards, family, parenting, education, financial
 
 ---
 
-## Graphics Required
+## Graphics (Generated ✅)
 
-| Asset | Size | Notes |
-|-------|------|-------|
-| App Icon | 512x512 | High-res, no transparency |
-| Feature Graphic | 1024x500 | Promotional banner |
-| Screenshots | Various | Phone: 1080x1920 or 1920x1080 |
-| TV Banner | 1280x720 | If targeting TV |
+| Asset | Size | File | Status |
+|-------|------|------|--------|
+| App Icon | 512x512 | `public/app-icon-512.png` | ✅ Ready |
+| Feature Graphic | 1024x500 | `public/feature-graphic.png` | ✅ Ready |
+| Screenshots | Various | Take from app | 📱 You'll capture |
 
 ---
 
@@ -130,10 +129,7 @@ https://kid-earn-reward.lovable.app/privacy
 michael.valente1@gmail.com
 ```
 
-**⚠️ IMPORTANT:** Before publishing, you MUST:
-1. Create a real email address (e.g., support@chorequest.app or use a Gmail)
-2. Update the Privacy Policy page with your real contact email
-3. Ensure the Privacy Policy URL is accessible on your published app
+✅ Email configured - you're all set!
 
 ---
 
