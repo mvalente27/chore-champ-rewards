@@ -119,7 +119,8 @@ workflows:
           success: true
           failure: true
       
-      google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: production
-        submit_as_draft: true  # Set to false to auto-release without review
+      # Auto-publish to Google Play (uncomment after adding GCLOUD_SERVICE_ACCOUNT_CREDENTIALS)
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: production
+      #   submit_as_draft: true
