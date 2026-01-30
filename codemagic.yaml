@@ -65,9 +65,17 @@ workflows:
       
       - name: Configure release signing and versioning
         script: |
-          # Update versionCode using Codemagic build number
-          sed -i "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" android/app/build.gradle
-          sed -i "s/versionName \"[^\"]*\"/versionName \"1.0.$BUILD_NUMBER\"/" android/app/build.gradle
+          # Increment versionCode using Codemagic build number (default to 2 if not set)
+          VERSION_CODE=${BUILD_NUMBER:-2}
+          echo "Setting versionCode to: $VERSION_CODE"
+          
+          # Update versionCode in build.gradle (handles both formats)
+          sed -i.bak -E "s/versionCode [0-9]+/versionCode $VERSION_CODE/g" android/app/build.gradle
+          sed -i.bak -E "s/versionName \"[^\"]+\"/versionName \"1.0.$VERSION_CODE\"/g" android/app/build.gradle
+          
+          # Verify the change
+          echo "Updated build.gradle versionCode:"
+          grep -E "versionCode|versionName" android/app/build.gradle
           
           # Add signing config to app/build.gradle
           cat >> android/app/build.gradle << 'EOF'
