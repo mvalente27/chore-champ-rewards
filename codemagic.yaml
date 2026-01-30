@@ -65,8 +65,9 @@ workflows:
       
       - name: Configure release signing and versioning
         script: |
-          # Increment versionCode using Codemagic build number (default to 2 if not set)
-          VERSION_CODE=${BUILD_NUMBER:-2}
+          # Set versionCode with floor of 10 to exceed any previously uploaded versions
+          BASE_CODE=${BUILD_NUMBER:-1}
+          VERSION_CODE=$((BASE_CODE + 10))
           echo "Setting versionCode to: $VERSION_CODE"
           
           # Update versionCode in build.gradle (handles both formats)
