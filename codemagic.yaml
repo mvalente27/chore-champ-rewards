@@ -63,8 +63,12 @@ workflows:
         script: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
       
-      - name: Configure release signing
+      - name: Configure release signing and versioning
         script: |
+          # Update versionCode using Codemagic build number
+          sed -i "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"1.0.$BUILD_NUMBER\"/" android/app/build.gradle
+          
           # Add signing config to app/build.gradle
           cat >> android/app/build.gradle << 'EOF'
 
