@@ -9,6 +9,7 @@ import { Loader2, ArrowLeft, Brain, TrendingUp, Target, Trophy, Coins, Calendar 
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { SmartAvatar } from '@/components/avatar';
 
 interface KidAnalytics {
   profile: {
@@ -206,7 +207,7 @@ const ParentAnalytics = () => {
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                <span className="text-lg">{kid.profile.avatar_url || '👧'}</span>
+                <SmartAvatar avatarData={kid.profile.avatar_url} size={24} />
                 <span className="font-medium">{kid.profile.name}</span>
               </button>
             ))}
@@ -313,7 +314,7 @@ const ParentAnalytics = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{selectedKidData.profile.avatar_url || '👧'}</span>
+                    <SmartAvatar avatarData={selectedKidData.profile.avatar_url} size={28} />
                     <span className="font-medium">{selectedKidData.profile.name}</span>
                   </div>
                   <div className="text-right">
