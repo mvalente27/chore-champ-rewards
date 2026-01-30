@@ -111,8 +111,7 @@ workflows:
           success: true
           failure: true
       
-      # Uncomment below to enable auto-publish to Play Store
-      # google_play:
-      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-      #   track: internal  # Options: internal, alpha, beta, production
-      #   submit_as_draft: true
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: production
+        submit_as_draft: true  # Set to false to auto-release without review
