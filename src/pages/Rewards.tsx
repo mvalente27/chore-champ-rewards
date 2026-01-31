@@ -162,6 +162,8 @@ const Rewards = () => {
       <Header 
         userName={profile?.name || ''} 
         userAvatar={profile?.avatar_url || (isParent ? '👨‍👩‍👧' : '👧')} 
+        totalCoins={profile?.total_earnings}
+        profileId={profile?.id}
       />
       
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">

@@ -170,6 +170,8 @@ const SkillTree = () => {
       <Header 
         userName={profile?.name || ''} 
         userAvatar={profile?.avatar_url || '⚡'} 
+        totalCoins={profile?.total_earnings}
+        profileId={profile?.id}
       />
       
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
