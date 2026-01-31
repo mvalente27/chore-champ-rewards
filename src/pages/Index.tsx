@@ -13,7 +13,7 @@ import { SetupKidLoginModal } from '@/components/SetupKidLoginModal';
 import { ResetKidPasswordModal } from '@/components/ResetKidPasswordModal';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Chore as LegacyChore } from '@/types/chores';
-import { Chore, Profile, ChoreStatus } from '@/types/database';
+import { Chore, Profile, ChoreStatus, ChoreClaim, ChoreClaimStatus } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useStreak } from '@/hooks/useStreak';
@@ -25,6 +25,7 @@ const Index = () => {
   const initialTab = searchParams.get('tab') || 'home';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [chores, setChores] = useState<Chore[]>([]);
+  const [myClaims, setMyClaims] = useState<ChoreClaim[]>([]);
   const [householdProfiles, setHouseholdProfiles] = useState<Profile[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -57,13 +58,16 @@ const Index = () => {
     }
   }, [searchParams]);
 
-  // Fetch chores and profiles
+  // Fetch chores, claims, and profiles
   useEffect(() => {
     if (profile?.household_id) {
       fetchChores();
       fetchProfiles();
+      if (!isParent) {
+        fetchMyClaims();
+      }
     }
-  }, [profile?.household_id]);
+  }, [profile?.household_id, isParent]);
 
   const fetchChores = async () => {
     if (!profile?.household_id) return;
@@ -86,6 +90,23 @@ const Index = () => {
     }
   };
 
+  const fetchMyClaims = async () => {
+    if (!profile?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chore_claims')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .in('status', ['claimed', 'pending_verification']);
+
+      if (error) throw error;
+      setMyClaims(data as ChoreClaim[] || []);
+    } catch (err) {
+      console.error('Error fetching claims:', err);
+    }
+  };
+
   const fetchProfiles = async () => {
     if (!profile?.household_id) return;
 
@@ -102,32 +123,35 @@ const Index = () => {
     }
   };
 
-  const handleClaimChore = async (id: string) => {
+  const handleClaimChore = async (choreId: string) => {
     if (!profile) return;
     
-    const chore = chores.find(c => c.id === id);
+    const chore = chores.find(c => c.id === choreId);
     if (!chore) return;
 
+    // Check if user already has an active claim on this chore
+    const existingClaim = myClaims.find(c => c.chore_id === choreId);
+    if (existingClaim) {
+      toast.error('You already have this chore claimed!');
+      return;
+    }
+
     try {
+      // Create a new claim in the chore_claims table
       const { data, error } = await supabase
-        .from('chores')
-        .update({ 
-          assigned_to: profile.id,
-          status: 'claimed' as ChoreStatus
+        .from('chore_claims')
+        .insert({
+          chore_id: choreId,
+          profile_id: profile.id,
+          status: 'claimed'
         })
-        .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
       
-      if (!data) {
-        throw new Error('Failed to claim chore - no rows updated');
-      }
-
-      setChores(chores.map(c => 
-        c.id === id ? { ...c, assigned_to: profile.id, status: 'claimed' as ChoreStatus } : c
-      ));
+      // Add to local claims
+      setMyClaims([...myClaims, data as ChoreClaim]);
 
       toast.success(
         <div className="flex items-center gap-2">
@@ -138,45 +162,37 @@ const Index = () => {
     } catch (err) {
       console.error('Error claiming chore:', err);
       toast.error('Failed to claim chore');
-      // Refresh chores to get correct state
-      fetchChores();
     }
   };
 
-  const handleCompleteChore = async (id: string) => {
+  const handleCompleteChore = async (choreId: string, claimId: string) => {
     if (!profile) return;
     
-    const chore = chores.find(c => c.id === id);
+    const chore = chores.find(c => c.id === choreId);
     if (!chore) return;
 
-    // Ensure the chore is claimed by this user before marking complete
-    if (chore.status !== 'claimed' || chore.assigned_to !== profile.id) {
-      toast.error('You need to claim this chore first!');
-      fetchChores(); // Refresh to get correct state
-      return;
-    }
-
     try {
-      // Update chore status to pending_verification (requires parent approval)
-      const { data, error: choreError } = await supabase
-        .from('chores')
+      // Update claim status to pending_verification
+      const { data, error } = await supabase
+        .from('chore_claims')
         .update({ 
-          status: 'pending_verification' as ChoreStatus,
+          status: 'pending_verification',
           completed_at: new Date().toISOString()
         })
-        .eq('id', id)
+        .eq('id', claimId)
+        .eq('profile_id', profile.id)
         .select()
         .single();
 
-      if (choreError) throw choreError;
+      if (error) throw error;
       
       if (!data) {
         throw new Error('Failed to submit chore - no rows updated');
       }
 
-      // Update local chore state
-      setChores(chores.map(c => 
-        c.id === id ? { ...c, status: 'pending_verification' as ChoreStatus, completed_at: new Date().toISOString() } : c
+      // Update local claims state
+      setMyClaims(myClaims.map(c => 
+        c.id === claimId ? { ...c, status: 'pending_verification' as ChoreClaimStatus, completed_at: new Date().toISOString() } : c
       ));
 
       // Celebrate with confetti!
@@ -191,60 +207,14 @@ const Index = () => {
     } catch (err) {
       console.error('Error completing chore:', err);
       toast.error('Failed to submit chore');
-      fetchChores(); // Refresh to get correct state
+      fetchMyClaims(); // Refresh to get correct state
     }
   };
 
+  // Parent approval is now handled on the Approvals page using chore_claims
+  // This function is kept for compatibility but redirects to Approvals
   const handleApproveChore = async (id: string) => {
-    if (!profile || !isParent) return;
-
-    const chore = chores.find(c => c.id === id);
-    if (!chore || !chore.assigned_to) return;
-
-    try {
-      // Update chore status
-      const { error: choreError } = await supabase
-        .from('chores')
-        .update({ status: 'completed' as ChoreStatus })
-        .eq('id', id);
-
-      if (choreError) throw choreError;
-
-      // Create earning record with pending status first
-      const { data: earningData, error: earningInsertError } = await supabase
-        .from('earnings')
-        .insert({
-          profile_id: chore.assigned_to,
-          chore_id: id,
-          amount: chore.reward_value,
-          status: 'pending'
-        })
-        .select('id')
-        .single();
-
-      if (earningInsertError) throw earningInsertError;
-
-      // Update to approved to trigger the total_earnings update
-      const { error: earningUpdateError } = await supabase
-        .from('earnings')
-        .update({
-          status: 'approved',
-          approved_by: profile.id,
-          approved_at: new Date().toISOString()
-        })
-        .eq('id', earningData.id);
-
-      if (earningUpdateError) throw earningUpdateError;
-
-      setChores(chores.map(c => 
-        c.id === id ? { ...c, status: 'completed' as ChoreStatus } : c
-      ));
-
-      toast.success(`Chore approved! +${chore.reward_value} Quest Coins added! 🪙`);
-    } catch (err) {
-      console.error('Error approving chore:', err);
-      toast.error('Failed to approve chore');
-    }
+    navigate('/approvals');
   };
 
   const handleAddChore = async (newChore: Omit<LegacyChore, 'id' | 'isCompleted'>) => {
@@ -437,14 +407,13 @@ const Index = () => {
     );
   }
 
-  const completedToday = chores.filter(c => c.status === 'completed').length;
-  const pendingChores = chores.filter(c => c.status === 'available' || c.status === 'claimed').length;
-  const pendingApproval = chores.filter(c => c.status === 'pending_verification').length;
+  // For stats, count claims instead of chore status
+  const completedToday = myClaims.filter(c => c.status === 'completed').length;
+  const pendingChores = chores.length; // All chores are always available
+  const pendingApproval = myClaims.filter(c => c.status === 'pending_verification').length;
 
-  // Filter chores based on role
-  const displayChores = isParent 
-    ? chores 
-    : chores.filter(c => c.status === 'available' || c.assigned_to === profile.id);
+  // Show all chores (they're templates now)
+  const displayChores = chores;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -473,6 +442,7 @@ const Index = () => {
         return (
           <ChoresView
             chores={displayChores}
+            myClaims={myClaims}
             isParent={isParent}
             onClaim={handleClaimChore}
             onComplete={handleCompleteChore}

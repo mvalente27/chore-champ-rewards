@@ -4,17 +4,22 @@ import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
-import { Chore, Profile } from '@/types/database';
+import { Chore, Profile, ChoreClaim, ChoreClaimStatus } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { awardXPForChore } from '@/hooks/useGamificationActions';
 import { showBadgeUnlockToast, showLevelUpToast } from '@/components/BadgeUnlockToast';
+import { SmartAvatar } from '@/components/avatar';
+
+interface ClaimWithDetails extends ChoreClaim {
+  chore: Chore;
+  profile: Profile;
+}
 
 const Approvals = () => {
   const [activeTab, setActiveTab] = useState('approvals');
-  const [pendingChores, setPendingChores] = useState<Chore[]>([]);
-  const [householdProfiles, setHouseholdProfiles] = useState<Profile[]>([]);
+  const [pendingClaims, setPendingClaims] = useState<ClaimWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const { user, profile, isParent, isLoading: authLoading } = useAuth();
@@ -29,79 +34,94 @@ const Approvals = () => {
     }
   }, [user, profile, isParent, authLoading, navigate]);
 
-  // Fetch pending chores and profiles
+  // Fetch pending claims
   useEffect(() => {
     if (profile?.household_id && isParent) {
-      fetchData();
+      fetchPendingClaims();
     }
   }, [profile?.household_id, isParent]);
 
-  const fetchData = async () => {
+  const fetchPendingClaims = async () => {
     if (!profile?.household_id) return;
     setIsLoading(true);
 
     try {
-      const [choresRes, profilesRes] = await Promise.all([
-        supabase
-          .from('chores')
-          .select('*')
-          .eq('household_id', profile.household_id)
-          .eq('status', 'pending_verification')
-          .order('completed_at', { ascending: false }),
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('household_id', profile.household_id)
-      ]);
+      // Get all chores in household
+      const { data: chores, error: choresError } = await supabase
+        .from('chores')
+        .select('*')
+        .eq('household_id', profile.household_id);
 
-      if (choresRes.error) throw choresRes.error;
-      if (profilesRes.error) throw profilesRes.error;
+      if (choresError) throw choresError;
 
-      setPendingChores(choresRes.data || []);
-      setHouseholdProfiles(profilesRes.data || []);
+      // Get all profiles in household
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('household_id', profile.household_id);
+
+      if (profilesError) throw profilesError;
+
+      // Get all pending claims for these chores
+      const choreIds = chores?.map(c => c.id) || [];
+      if (choreIds.length === 0) {
+        setPendingClaims([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: claims, error: claimsError } = await supabase
+        .from('chore_claims')
+        .select('*')
+        .in('chore_id', choreIds)
+        .eq('status', 'pending_verification')
+        .order('completed_at', { ascending: false });
+
+      if (claimsError) throw claimsError;
+
+      // Combine claims with chore and profile details
+      const claimsWithDetails: ClaimWithDetails[] = (claims || []).map(claim => {
+        const chore = chores?.find(c => c.id === claim.chore_id);
+        const claimProfile = profiles?.find(p => p.id === claim.profile_id);
+        return {
+          ...claim,
+          chore: chore!,
+          profile: claimProfile!,
+        } as ClaimWithDetails;
+      }).filter(c => c.chore && c.profile);
+
+      setPendingClaims(claimsWithDetails);
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching pending claims:', err);
       toast.error('Failed to load approvals');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getKidName = (profileId: string | null) => {
-    if (!profileId) return 'Unknown';
-    const kid = householdProfiles.find(p => p.id === profileId);
-    return kid?.name || 'Unknown';
-  };
-
-  const getKidAvatar = (profileId: string | null) => {
-    if (!profileId) return '👧';
-    const kid = householdProfiles.find(p => p.id === profileId);
-    return kid?.avatar_url || '👧';
-  };
-
-  const handleApprove = async (chore: Chore, resetForReuse: boolean = false) => {
-    if (!profile || !chore.assigned_to) return;
+  const handleApprove = async (claim: ClaimWithDetails) => {
+    if (!profile) return;
 
     try {
-      // Update chore status - either completed or reset to available
-      const { error: choreError } = await supabase
-        .from('chores')
+      // Update claim status to completed
+      const { error: claimError } = await supabase
+        .from('chore_claims')
         .update({ 
-          status: resetForReuse ? 'available' : 'completed',
-          assigned_to: resetForReuse ? null : chore.assigned_to,
-          completed_at: resetForReuse ? null : chore.completed_at
+          status: 'completed' as ChoreClaimStatus,
+          approved_by: profile.id,
+          approved_at: new Date().toISOString()
         })
-        .eq('id', chore.id);
+        .eq('id', claim.id);
 
-      if (choreError) throw choreError;
+      if (claimError) throw claimError;
 
       // Create earning record with pending status first
       const { data: earningData, error: earningInsertError } = await supabase
         .from('earnings')
         .insert({
-          profile_id: chore.assigned_to,
-          chore_id: chore.id,
-          amount: chore.reward_value,
+          profile_id: claim.profile_id,
+          chore_id: claim.chore_id,
+          amount: claim.chore.reward_value,
           status: 'pending'
         })
         .select('id')
@@ -122,7 +142,7 @@ const Approvals = () => {
       if (earningUpdateError) throw earningUpdateError;
 
       // Award XP and check for badges
-      const gamificationResult = await awardXPForChore(chore.assigned_to);
+      const gamificationResult = await awardXPForChore(claim.profile_id);
       
       // Show level up notification if leveled up
       if (gamificationResult.xpResult?.leveled_up) {
@@ -134,38 +154,37 @@ const Approvals = () => {
         setTimeout(() => showBadgeUnlockToast(badge), 500);
       });
 
-      setPendingChores(prev => prev.filter(c => c.id !== chore.id));
+      setPendingClaims(prev => prev.filter(c => c.id !== claim.id));
       
       const xpMessage = gamificationResult.xpAwarded > 0 
         ? ` (+${gamificationResult.xpAwarded} XP)` 
         : '';
-      const resetMessage = resetForReuse ? ' (Chore reset for next time!)' : '';
-      toast.success(`Approved! +${chore.reward_value} Quest Coins${xpMessage} for ${getKidName(chore.assigned_to)} 🪙${resetMessage}`);
+      toast.success(`Approved! +${claim.chore.reward_value} Quest Coins${xpMessage} for ${claim.profile.name} 🪙`);
     } catch (err) {
-      console.error('Error approving chore:', err);
+      console.error('Error approving claim:', err);
       toast.error('Failed to approve chore');
     }
   };
 
-  const handleReject = async (chore: Chore) => {
+  const handleReject = async (claim: ClaimWithDetails) => {
     if (!profile) return;
 
     try {
-      // Reset chore to claimed status so kid can try again
+      // Reset claim to claimed status so kid can try again
       const { error } = await supabase
-        .from('chores')
+        .from('chore_claims')
         .update({ 
-          status: 'claimed',
+          status: 'claimed' as ChoreClaimStatus,
           completed_at: null
         })
-        .eq('id', chore.id);
+        .eq('id', claim.id);
 
       if (error) throw error;
 
-      setPendingChores(prev => prev.filter(c => c.id !== chore.id));
-      toast.info(`Sent "${chore.title}" back to ${getKidName(chore.assigned_to)} to try again`);
+      setPendingClaims(prev => prev.filter(c => c.id !== claim.id));
+      toast.info(`Sent "${claim.chore.title}" back to ${claim.profile.name} to try again`);
     } catch (err) {
-      console.error('Error rejecting chore:', err);
+      console.error('Error rejecting claim:', err);
       toast.error('Failed to reject chore');
     }
   };
@@ -195,7 +214,7 @@ const Approvals = () => {
           <p className="text-muted-foreground mt-1">Review completed chores</p>
         </div>
 
-        {pendingChores.length === 0 ? (
+        {pendingClaims.length === 0 ? (
           <div className="text-center py-16 bg-muted/30 rounded-xl">
             <span className="text-5xl mb-4 block">✅</span>
             <p className="text-lg font-medium text-foreground">All caught up!</p>
@@ -203,28 +222,28 @@ const Approvals = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {pendingChores.map((chore) => (
+            {pendingClaims.map((claim) => (
               <div
-                key={chore.id}
+                key={claim.id}
                 className="bg-card border rounded-xl p-4 space-y-4"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-3xl">{chore.icon}</span>
+                  <span className="text-3xl">{claim.chore.icon}</span>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{chore.title}</h3>
-                    {chore.description && (
-                      <p className="text-sm text-muted-foreground mt-0.5">{chore.description}</p>
+                    <h3 className="font-semibold text-foreground">{claim.chore.title}</h3>
+                    {claim.chore.description && (
+                      <p className="text-sm text-muted-foreground mt-0.5">{claim.chore.description}</p>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-lg">{getKidAvatar(chore.assigned_to)}</span>
-                      <span className="text-sm font-medium">{getKidName(chore.assigned_to)}</span>
+                      <SmartAvatar avatarData={claim.profile.avatar_url} size={24} />
+                      <span className="text-sm font-medium">{claim.profile.name}</span>
                       <span className="text-xs text-muted-foreground">
-                        • {chore.completed_at ? new Date(chore.completed_at).toLocaleDateString() : 'Just now'}
+                        • {claim.completed_at ? new Date(claim.completed_at).toLocaleDateString() : 'Just now'}
                       </span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-primary">🪙 {chore.reward_value}</span>
+                    <span className="text-lg font-bold text-primary">🪙 {claim.chore.reward_value}</span>
                   </div>
                 </div>
 
@@ -234,29 +253,18 @@ const Approvals = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => handleReject(chore)}
+                      onClick={() => handleReject(claim)}
                     >
                       <XCircle className="w-4 h-4 mr-1" />
                       Try Again
                     </Button>
-                  </div>
-                  <div className="flex gap-2">
                     <Button
-                      variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => handleApprove(chore, false)}
+                      onClick={() => handleApprove(claim)}
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      Approve & Done
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleApprove(chore, true)}
-                    >
-                      <RotateCcw className="w-4 h-4 mr-1" />
-                      Approve & Reset
+                      Approve
                     </Button>
                   </div>
                 </div>
