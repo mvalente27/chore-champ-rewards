@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
+type AgeTier = 'explorer' | 'builder' | 'achiever' | null;
+
 interface EndlessRunnerGameProps {
   onGameEnd: (score: number) => void;
   onCancel: () => void;
+  ageTier?: AgeTier;
 }
 
 interface Obstacle {
@@ -22,7 +25,42 @@ interface Coin {
 const LANES = [0, 1, 2];
 const LANE_WIDTH = 33.33;
 
-export function EndlessRunnerGame({ onGameEnd, onCancel }: EndlessRunnerGameProps) {
+// Difficulty settings based on age tier
+const getDifficultySettings = (ageTier: AgeTier) => {
+  switch (ageTier) {
+    case 'explorer': // 5-8 years: Easier
+      return {
+        initialSpeed: 2,
+        maxSpeed: 5,
+        speedIncrement: 0.1,
+        obstacleSpawnRate: 0.4,
+        coinSpawnRate: 0.6,
+        spawnInterval: 1200
+      };
+    case 'achiever': // 13-18 years: Harder
+      return {
+        initialSpeed: 4,
+        maxSpeed: 12,
+        speedIncrement: 0.4,
+        obstacleSpawnRate: 0.8,
+        coinSpawnRate: 0.3,
+        spawnInterval: 500
+      };
+    default: // builder (9-12) or unknown: Medium
+      return {
+        initialSpeed: 3,
+        maxSpeed: 8,
+        speedIncrement: 0.2,
+        obstacleSpawnRate: 0.6,
+        coinSpawnRate: 0.4,
+        spawnInterval: 800
+      };
+  }
+};
+
+export function EndlessRunnerGame({ onGameEnd, onCancel, ageTier }: EndlessRunnerGameProps) {
+  const difficulty = getDifficultySettings(ageTier);
+  
   const [score, setScore] = useState(0);
   const [coins, setCoins] = useState(0);
   const [playerLane, setPlayerLane] = useState(1);
@@ -30,7 +68,7 @@ export function EndlessRunnerGame({ onGameEnd, onCancel }: EndlessRunnerGameProp
   const [collectibles, setCollectibles] = useState<Coin[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [speed, setSpeed] = useState(3);
+  const [speed, setSpeed] = useState(difficulty.initialSpeed);
   const [isJumping, setIsJumping] = useState(false);
   const obstacleIdRef = useRef(0);
   const coinIdRef = useRef(0);
@@ -95,7 +133,7 @@ export function EndlessRunnerGame({ onGameEnd, onCancel }: EndlessRunnerGameProp
 
     const spawnInterval = setInterval(() => {
       // Spawn obstacle
-      if (Math.random() < 0.6) {
+      if (Math.random() < difficulty.obstacleSpawnRate) {
         const types: Array<'rock' | 'tree' | 'hole'> = ['rock', 'tree', 'hole'];
         setObstacles(prev => [...prev, {
           id: obstacleIdRef.current++,
@@ -106,28 +144,28 @@ export function EndlessRunnerGame({ onGameEnd, onCancel }: EndlessRunnerGameProp
       }
 
       // Spawn coin
-      if (Math.random() < 0.4) {
+      if (Math.random() < difficulty.coinSpawnRate) {
         setCollectibles(prev => [...prev, {
           id: coinIdRef.current++,
           lane: LANES[Math.floor(Math.random() * LANES.length)],
           y: -10
         }]);
       }
-    }, 800);
+    }, difficulty.spawnInterval);
 
     return () => clearInterval(spawnInterval);
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, difficulty.obstacleSpawnRate, difficulty.coinSpawnRate, difficulty.spawnInterval]);
 
   // Increase speed over time
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
     const speedInterval = setInterval(() => {
-      setSpeed(prev => Math.min(8, prev + 0.2));
+      setSpeed(prev => Math.min(difficulty.maxSpeed, prev + difficulty.speedIncrement));
     }, 5000);
 
     return () => clearInterval(speedInterval);
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, difficulty.maxSpeed, difficulty.speedIncrement]);
 
   // Game loop
   useEffect(() => {
