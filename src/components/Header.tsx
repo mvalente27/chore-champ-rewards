@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Coins } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SmartAvatar } from '@/components/avatar/SmartAvatar';
 import { NotificationsPanel } from './NotificationsPanel';
@@ -28,21 +28,15 @@ export function Header({ userName, userAvatar, totalCoins = 0, profileId }: Head
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative"
-              onClick={() => setShowNotifications(true)}
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary rounded-full border-2 border-background" />
-            </Button>
-            <div className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1.5 rounded-full">
-              <Coins className="w-4 h-4" />
-              <span className="text-sm font-bold">{totalCoins}</span>
-            </div>
-          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => setShowNotifications(true)}
+          >
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary rounded-full border-2 border-background" />
+          </Button>
         </div>
       </header>
 

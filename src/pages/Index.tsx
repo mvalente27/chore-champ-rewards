@@ -187,13 +187,31 @@ const Index = () => {
     if (!chore) return;
 
     // Check if user already has an active claim on this chore
-    const existingClaim = myClaims.find(c => c.chore_id === choreId);
+    const existingClaim = myClaims.find(c => c.chore_id === choreId && (c.status === 'claimed' || c.status === 'pending_verification'));
     if (existingClaim) {
       toast.error('You already have this chore claimed!');
       return;
     }
 
+    // Check if user has already claimed this chore today (once per day limit)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
     try {
+      const { data: todayClaims, error: checkError } = await supabase
+        .from('chore_claims')
+        .select('id')
+        .eq('chore_id', choreId)
+        .eq('profile_id', profile.id)
+        .gte('claimed_at', todayStart.toISOString());
+
+      if (checkError) throw checkError;
+
+      if (todayClaims && todayClaims.length > 0) {
+        toast.error('You can only do this chore once per day! Try again tomorrow.');
+        return;
+      }
+
       // Create a new claim in the chore_claims table
       const { data, error } = await supabase
         .from('chore_claims')
