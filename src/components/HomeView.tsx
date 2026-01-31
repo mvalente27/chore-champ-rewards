@@ -5,7 +5,7 @@ import { LevelProgress } from '@/components/LevelProgress';
 import { BadgeGrid } from '@/components/BadgeGrid';
 import { Leaderboard } from '@/components/Leaderboard';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal, Zap, BarChart3, Gift } from 'lucide-react';
+import { UserPlus, Brain, ChevronRight, KeyRound, CheckCircle, Pencil, TrendingUp, Building2, Medal, Zap, BarChart3, Gift, Gamepad2 } from 'lucide-react';
 import { Profile } from '@/types/database';
 import { useGamification } from '@/hooks/useGamification';
 import { SmartAvatar } from '@/components/avatar';
@@ -121,6 +121,21 @@ export function HomeView({
             <div className="flex-1 text-left">
               <p className="font-semibold text-foreground">Money Quiz</p>
               <p className="text-sm text-muted-foreground">Learn & earn bonus points!</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Daily Mini Game */}
+          <button
+            onClick={() => navigate('/games')}
+            className="w-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-xl p-4 flex items-center gap-3 hover:from-cyan-500/15 hover:to-blue-500/15 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+              <Gamepad2 className="w-5 h-5 text-cyan-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-foreground">Daily Mini Game</p>
+              <p className="text-sm text-muted-foreground">Play 5x daily for bonus coins!</p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>

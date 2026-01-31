@@ -17,6 +17,7 @@ import History from "./pages/History";
 import Install from "./pages/Install";
 import SkillTree from "./pages/SkillTree";
 import ParentAnalytics from "./pages/ParentAnalytics";
+import MiniGames from "./pages/MiniGames";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import DeleteAccount from "./pages/DeleteAccount";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/install" element={<Install />} />
             <Route path="/skills" element={<SkillTree />} />
             <Route path="/analytics" element={<ParentAnalytics />} />
+            <Route path="/games" element={<MiniGames />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/delete-account" element={<DeleteAccount />} />
             <Route path="/delete-data" element={<DeleteData />} />

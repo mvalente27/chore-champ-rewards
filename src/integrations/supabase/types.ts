@@ -266,6 +266,44 @@ export type Database = {
           },
         ]
       }
+      game_plays: {
+        Row: {
+          coins_earned: number
+          created_at: string
+          game_type: string
+          id: string
+          played_at: string
+          profile_id: string
+          score: number
+        }
+        Insert: {
+          coins_earned?: number
+          created_at?: string
+          game_type: string
+          id?: string
+          played_at?: string
+          profile_id: string
+          score?: number
+        }
+        Update: {
+          coins_earned?: number
+          created_at?: string
+          game_type?: string
+          id?: string
+          played_at?: string
+          profile_id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_plays_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       households: {
         Row: {
           created_at: string
@@ -1013,6 +1051,11 @@ export type Database = {
         }
       }
       get_current_profile_id: { Args: never; Returns: string }
+      get_daily_game_type: { Args: never; Returns: string }
+      get_remaining_game_plays: {
+        Args: { p_profile_id: string }
+        Returns: number
+      }
       is_member_of_household: {
         Args: { _household_id: string }
         Returns: boolean
@@ -1021,6 +1064,14 @@ export type Database = {
       is_parent_of_household: {
         Args: { _household_id: string }
         Returns: boolean
+      }
+      record_game_play: {
+        Args: { p_game_type: string; p_profile_id: string; p_score: number }
+        Returns: {
+          coins_earned: number
+          daily_bonus_earned: boolean
+          remaining_plays: number
+        }[]
       }
       redeem_reward: {
         Args: { p_profile_id: string; p_reward_id: string }
