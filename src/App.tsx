@@ -16,6 +16,7 @@ import EntrepreneurQuest from "./pages/EntrepreneurQuest";
 import History from "./pages/History";
 import Install from "./pages/Install";
 import SkillTree from "./pages/SkillTree";
+import Savings from "./pages/Savings";
 import ParentAnalytics from "./pages/ParentAnalytics";
 import MiniGames from "./pages/MiniGames";
 import NotFound from "./pages/NotFound";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/history" element={<History />} />
             <Route path="/install" element={<Install />} />
             <Route path="/skills" element={<SkillTree />} />
+            <Route path="/savings" element={<Savings />} />
             <Route path="/analytics" element={<ParentAnalytics />} />
             <Route path="/games" element={<MiniGames />} />
             <Route path="/privacy" element={<Privacy />} />

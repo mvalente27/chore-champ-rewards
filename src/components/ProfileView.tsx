@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Coins, Calendar, Home, Copy, Check, Palette } from 'lucide-react';
+import { LogOut, User, Coins, Calendar, Home, Copy, Check, Palette, PiggyBank } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AvatarBuilderNew, AvatarRenderer, deserializeAvatar } from '@/components/avatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +34,7 @@ export function ProfileView({ profile, isParent, onSignOut, onAvatarUpdate }: Pr
   const [isAvatarBuilderOpen, setIsAvatarBuilderOpen] = useState(false);
   const [currentAvatar, setCurrentAvatar] = useState(profile.avatar_url || '');
   const familyCode = generateFamilyCode(profile.household_id);
+  const navigate = useNavigate();
 
   const handleCopyFamilyCode = async () => {
     try {
@@ -149,6 +151,22 @@ export function ProfileView({ profile, isParent, onSignOut, onAvatarUpdate }: Pr
           </p>
         </div>
       </div>
+
+      {/* Savings Goals - Kids Only */}
+      {!isParent && (
+        <button
+          onClick={() => navigate('/savings')}
+          className="w-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-xl p-4 flex items-center gap-3 hover:from-pink-500/30 hover:to-purple-500/30 transition-all"
+        >
+          <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center">
+            <PiggyBank className="w-5 h-5 text-pink-500" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-semibold text-foreground">My Savings Goals</p>
+            <p className="text-sm text-muted-foreground">Save up for awesome rewards!</p>
+          </div>
+        </button>
+      )}
 
       {/* Account Section */}
       <div className="space-y-3">
