@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, Star, Sparkles, User, Users, Download, Smartphone } from 'lucide-react';
+import { Loader2, Star, Sparkles, User, Users, Download, Smartphone, Check } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,6 +23,13 @@ const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 const usernameSchema = z.string().min(3, 'Username must be at least 3 characters').max(20);
 const familyCodeSchema = z.string().length(6, 'Family code must be 6 characters');
 
+const STORAGE_KEY = 'chorequest_kid_login';
+
+interface SavedKidLogin {
+  username: string;
+  familyCode: string;
+}
+
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loginType, setLoginType] = useState<'parent' | 'kid'>('parent');
@@ -30,6 +38,7 @@ const Auth = () => {
   const [familyCode, setFamilyCode] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; username?: string; familyCode?: string }>({});
   const [isInstalled, setIsInstalled] = useState(false);
@@ -37,6 +46,22 @@ const Auth = () => {
 
   const { signIn, signUp, user, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Load saved kid login credentials on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed: SavedKidLogin = JSON.parse(saved);
+        setUsername(parsed.username || '');
+        setFamilyCode(parsed.familyCode || '');
+        setRememberMe(true);
+        setLoginType('kid');
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, []);
 
   // Check if app is installed and listen for install prompt
   useEffect(() => {
@@ -174,6 +199,16 @@ const Auth = () => {
         if (error) {
           toast.error('Invalid username or password. Please try again.');
         } else {
+          // Save or clear kid login credentials based on Remember Me
+          if (rememberMe) {
+            const savedLogin: SavedKidLogin = { 
+              username: username.toLowerCase(), 
+              familyCode: familyCode.toUpperCase() 
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedLogin));
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+          }
           toast.success(`Welcome back! 👋`);
           navigate('/');
         }
@@ -364,6 +399,22 @@ const Auth = () => {
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
             </div>
+
+            {loginType === 'kid' && (
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="rememberMe" 
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
+                <Label 
+                  htmlFor="rememberMe" 
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Remember my username & family code
+                </Label>
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
