@@ -164,7 +164,7 @@ const Approvals = () => {
     }
   };
 
-  const handleReject = async (claim: ClaimWithDetails) => {
+  const handleTryAgain = async (claim: ClaimWithDetails) => {
     if (!profile) return;
 
     try {
@@ -182,8 +182,33 @@ const Approvals = () => {
       setPendingClaims(prev => prev.filter(c => c.id !== claim.id));
       toast.info(`Sent "${claim.chore.title}" back to ${claim.profile.name} to try again`);
     } catch (err) {
-      console.error('Error rejecting claim:', err);
-      toast.error('Failed to reject chore');
+      console.error('Error resetting claim:', err);
+      toast.error('Failed to reset chore');
+    }
+  };
+
+  const handleDeny = async (claim: ClaimWithDetails, reason?: string) => {
+    if (!profile) return;
+
+    try {
+      // Set claim to denied status - kid must acknowledge
+      const { error } = await supabase
+        .from('chore_claims')
+        .update({ 
+          status: 'denied',
+          denial_reason: reason || 'Chore was not completed properly',
+          approved_by: profile.id,
+          approved_at: new Date().toISOString()
+        })
+        .eq('id', claim.id);
+
+      if (error) throw error;
+
+      setPendingClaims(prev => prev.filter(c => c.id !== claim.id));
+      toast.warning(`Denied "${claim.chore.title}" - ${claim.profile.name} will be notified`);
+    } catch (err) {
+      console.error('Error denying claim:', err);
+      toast.error('Failed to deny chore');
     }
   };
 
@@ -251,9 +276,9 @@ const Approvals = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => handleReject(claim)}
+                      onClick={() => handleTryAgain(claim)}
                     >
-                      <XCircle className="w-4 h-4 mr-1" />
+                      <RotateCcw className="w-4 h-4 mr-1" />
                       Try Again
                     </Button>
                     <Button
@@ -265,6 +290,15 @@ const Approvals = () => {
                       Approve
                     </Button>
                   </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleDeny(claim)}
+                  >
+                    <XCircle className="w-4 h-4 mr-1" />
+                    Deny Chore
+                  </Button>
                 </div>
               </div>
             ))}

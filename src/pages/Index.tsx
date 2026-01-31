@@ -26,6 +26,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [chores, setChores] = useState<Chore[]>([]);
   const [myClaims, setMyClaims] = useState<ChoreClaim[]>([]);
+  const [deniedClaims, setDeniedClaims] = useState<(ChoreClaim & { chore?: Chore })[]>([]);
   const [householdProfiles, setHouseholdProfiles] = useState<Profile[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,6 +66,7 @@ const Index = () => {
       fetchProfiles();
       if (!isParent) {
         fetchMyClaims();
+        fetchDeniedClaims();
       }
     }
   }, [profile?.household_id, isParent]);
@@ -104,6 +106,61 @@ const Index = () => {
       setMyClaims(data as ChoreClaim[] || []);
     } catch (err) {
       console.error('Error fetching claims:', err);
+    }
+  };
+
+  const fetchDeniedClaims = async () => {
+    if (!profile?.id) return;
+    
+    try {
+      // Fetch denied claims that haven't been acknowledged
+      const { data: claimsData, error: claimsError } = await supabase
+        .from('chore_claims')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .eq('status', 'denied')
+        .is('acknowledged_at', null);
+
+      if (claimsError) throw claimsError;
+
+      // Fetch chore details for each denied claim
+      if (claimsData && claimsData.length > 0) {
+        const choreIds = claimsData.map(c => c.chore_id);
+        const { data: choresData, error: choresError } = await supabase
+          .from('chores')
+          .select('*')
+          .in('id', choreIds);
+
+        if (choresError) throw choresError;
+
+        const claimsWithChores = claimsData.map(claim => ({
+          ...claim,
+          chore: choresData?.find(c => c.id === claim.chore_id)
+        })) as (ChoreClaim & { chore?: Chore })[];
+
+        setDeniedClaims(claimsWithChores);
+      } else {
+        setDeniedClaims([]);
+      }
+    } catch (err) {
+      console.error('Error fetching denied claims:', err);
+    }
+  };
+
+  const handleAcknowledgeDenial = async (claimId: string) => {
+    try {
+      const { error } = await supabase
+        .from('chore_claims')
+        .update({ acknowledged_at: new Date().toISOString() })
+        .eq('id', claimId);
+
+      if (error) throw error;
+
+      setDeniedClaims(deniedClaims.filter(c => c.id !== claimId));
+      toast.info('Got it! You can try again with another chore.');
+    } catch (err) {
+      console.error('Error acknowledging denial:', err);
+      toast.error('Failed to acknowledge');
     }
   };
 
@@ -443,9 +500,11 @@ const Index = () => {
           <ChoresView
             chores={displayChores}
             myClaims={myClaims}
+            deniedClaims={deniedClaims}
             isParent={isParent}
             onClaim={handleClaimChore}
             onComplete={handleCompleteChore}
+            onAcknowledgeDenial={handleAcknowledgeDenial}
             onApprove={isParent ? handleApproveChore : undefined}
             onEdit={isParent ? handleEditChore : undefined}
             onAddChore={() => setIsAddModalOpen(true)}

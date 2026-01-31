@@ -2,7 +2,7 @@
 
 export type ProfileType = 'parent' | 'kid';
 export type ChoreStatus = 'available' | 'claimed' | 'pending_verification' | 'completed';
-export type ChoreClaimStatus = 'claimed' | 'pending_verification' | 'completed';
+export type ChoreClaimStatus = 'claimed' | 'pending_verification' | 'completed' | 'denied';
 export type EarningStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Household {
@@ -50,6 +50,8 @@ export interface ChoreClaim {
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  denial_reason?: string | null;
+  acknowledged_at?: string | null;
 }
 
 export interface Earning {

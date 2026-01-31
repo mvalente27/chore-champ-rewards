@@ -91,34 +91,40 @@ export type Database = {
       }
       chore_claims: {
         Row: {
+          acknowledged_at: string | null
           approved_at: string | null
           approved_by: string | null
           chore_id: string
           claimed_at: string
           completed_at: string | null
           created_at: string
+          denial_reason: string | null
           id: string
           profile_id: string
           status: string
         }
         Insert: {
+          acknowledged_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
           chore_id: string
           claimed_at?: string
           completed_at?: string | null
           created_at?: string
+          denial_reason?: string | null
           id?: string
           profile_id: string
           status?: string
         }
         Update: {
+          acknowledged_at?: string | null
           approved_at?: string | null
           approved_by?: string | null
           chore_id?: string
           claimed_at?: string
           completed_at?: string | null
           created_at?: string
+          denial_reason?: string | null
           id?: string
           profile_id?: string
           status?: string
