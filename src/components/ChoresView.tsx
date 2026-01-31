@@ -1,6 +1,6 @@
 import { ChoreCard } from '@/components/ChoreCard';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, AlertTriangle, Check } from 'lucide-react';
 import { Chore as LegacyChore } from '@/types/chores';
 import { ChoreStatus, ChoreClaim, ChoreClaimStatus } from '@/types/database';
 
@@ -21,9 +21,11 @@ interface Chore {
 interface ChoresViewProps {
   chores: Chore[];
   myClaims?: ChoreClaim[];
+  deniedClaims?: (ChoreClaim & { chore?: Chore })[];
   isParent: boolean;
   onClaim: (choreId: string) => void;
   onComplete: (choreId: string, claimId: string) => void;
+  onAcknowledgeDenial?: (claimId: string) => void;
   onApprove?: (id: string) => void;
   onEdit?: (chore: LegacyChore) => void;
   onAddChore: () => void;
@@ -51,9 +53,11 @@ const getMyClaimStatus = (choreId: string, myClaims: ChoreClaim[]): { status: Ch
 export function ChoresView({
   chores,
   myClaims = [],
+  deniedClaims = [],
   isParent,
   onClaim,
   onComplete,
+  onAcknowledgeDenial,
   onApprove,
   onEdit,
   onAddChore,
@@ -85,12 +89,51 @@ export function ChoresView({
         </div>
       ) : (
         <div className="space-y-4">
+          {/* For kids: Show denied claims that need acknowledgment */}
+          {!isParent && deniedClaims.length > 0 && (
+            <>
+              <h3 className="text-sm font-semibold text-destructive uppercase tracking-wide flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Denied Chores
+              </h3>
+              {deniedClaims.map((claim) => {
+                const chore = claim.chore || chores.find(c => c.id === claim.chore_id);
+                if (!chore) return null;
+                return (
+                  <div 
+                    key={`denied-${claim.id}`}
+                    className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 space-y-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">❌</span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-foreground">{chore.title}</h4>
+                        <p className="text-sm text-destructive mt-1">
+                          {(claim as any).denial_reason || 'This chore was not approved'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => onAcknowledgeDenial?.(claim.id)}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      I Understand
+                    </Button>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
           {/* For kids: Show their active claims first */}
           {!isParent && myClaims.length > 0 && (
             <>
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Your Active Tasks</h3>
               {myClaims
-                .filter(claim => claim.status !== 'completed')
+                .filter(claim => claim.status !== 'completed' && claim.status !== 'denied')
                 .map((claim) => {
                   const chore = chores.find(c => c.id === claim.chore_id);
                   if (!chore) return null;
