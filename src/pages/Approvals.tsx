@@ -12,6 +12,16 @@ import { awardXPForChore } from '@/hooks/useGamificationActions';
 import { showBadgeUnlockToast, showLevelUpToast } from '@/components/BadgeUnlockToast';
 import { SmartAvatar } from '@/components/avatar';
 
+// Helper to safely display icon - returns fallback if it looks like JSON
+const getSafeIcon = (icon: string | null | undefined): string => {
+  if (!icon) return '📋';
+  const trimmed = icon.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    return '📋';
+  }
+  return icon;
+};
+
 interface ClaimWithDetails extends ChoreClaim {
   chore: Chore;
   profile: Profile;
@@ -228,7 +238,7 @@ const Approvals = () => {
                 className="bg-card border rounded-xl p-4 space-y-4"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-3xl">{claim.chore.icon}</span>
+                  <span className="text-3xl">{getSafeIcon(claim.chore.icon)}</span>
                   <div className="flex-1">
                     <h3 className="font-semibold text-foreground">{claim.chore.title}</h3>
                     {claim.chore.description && (
