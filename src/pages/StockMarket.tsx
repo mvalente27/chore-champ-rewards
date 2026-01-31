@@ -115,33 +115,50 @@ export default function StockMarket() {
       const existing = kidStocks.find(ks => ks.stock_id === stock.id);
       
       if (existing) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("kid_stocks")
           .update({ 
             shares: existing.shares + 1, 
             total_invested: existing.total_invested + price,
             updated_at: new Date().toISOString()
           })
-          .eq("id", existing.id);
+          .eq("id", existing.id)
+          .select()
+          .single();
         if (error) throw error;
+        
+        // Update local state immediately
+        setKidStocks(prev => prev.map(ks => 
+          ks.id === existing.id 
+            ? { ...ks, shares: existing.shares + 1, total_invested: existing.total_invested + price }
+            : ks
+        ));
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("kid_stocks")
           .insert({ 
             profile_id: profile.id, 
             stock_id: stock.id, 
             shares: 1, 
             total_invested: price 
-          });
+          })
+          .select()
+          .single();
         if (error) throw error;
+        
+        // Add to local state immediately
+        if (data) {
+          setKidStocks(prev => [...prev, data as KidStock]);
+        }
       }
 
       toast({ title: "🎉 Stock Purchased!", description: `You bought 1 share of ${stock.symbol}!` });
-      await fetchData();
       await refreshProfile();
     } catch (error) {
       console.error("Error buying stock:", error);
       toast({ title: "Error buying stock", variant: "destructive" });
+      // Refetch on error to ensure correct state
+      await fetchData();
     } finally {
       setBuying(null);
     }
@@ -170,11 +187,15 @@ export default function StockMarket() {
 
       // Update or delete holding
       if (holding.shares === 1) {
+        // Delete the holding completely when selling last share
         const { error } = await supabase
           .from("kid_stocks")
           .delete()
           .eq("id", holding.id);
         if (error) throw error;
+        
+        // Immediately update local state to remove this stock
+        setKidStocks(prev => prev.filter(ks => ks.id !== holding.id));
       } else {
         const avgPrice = holding.total_invested / holding.shares;
         const { error } = await supabase
@@ -186,14 +207,22 @@ export default function StockMarket() {
           })
           .eq("id", holding.id);
         if (error) throw error;
+        
+        // Update local state with reduced shares
+        setKidStocks(prev => prev.map(ks => 
+          ks.id === holding.id 
+            ? { ...ks, shares: holding.shares - 1, total_invested: holding.total_invested - avgPrice }
+            : ks
+        ));
       }
 
       toast({ title: "💰 Stock Sold!", description: `You sold 1 share of ${stock.symbol} for ${price} coins!` });
-      await fetchData();
       await refreshProfile();
     } catch (error) {
       console.error("Error selling stock:", error);
       toast({ title: "Error selling stock", variant: "destructive" });
+      // Refetch to get correct state on error
+      await fetchData();
     } finally {
       setSelling(null);
     }
