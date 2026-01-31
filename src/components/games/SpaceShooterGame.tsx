@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
+type AgeTier = 'explorer' | 'builder' | 'achiever' | null;
+
 interface SpaceShooterGameProps {
   onGameEnd: (score: number) => void;
   onCancel: () => void;
+  ageTier?: AgeTier;
 }
 
 interface Bullet {
@@ -19,13 +22,45 @@ interface Enemy {
   type: 'basic' | 'fast' | 'big';
 }
 
-export function SpaceShooterGame({ onGameEnd, onCancel }: SpaceShooterGameProps) {
+// Difficulty settings based on age tier
+const getDifficultySettings = (ageTier: AgeTier) => {
+  switch (ageTier) {
+    case 'explorer': // 5-8 years: Easier
+      return {
+        spawnInterval: 1500,      // Slower spawn
+        enemySpeed: { basic: 0.8, fast: 1.2, big: 0.5 },
+        lives: 5,
+        gameDuration: 45000,      // Shorter game
+        enemyTypes: ['basic', 'basic', 'basic', 'basic', 'big'] as const
+      };
+    case 'achiever': // 13-18 years: Harder
+      return {
+        spawnInterval: 600,       // Fast spawn
+        enemySpeed: { basic: 1.8, fast: 3, big: 1.2 },
+        lives: 2,
+        gameDuration: 90000,      // Longer game
+        enemyTypes: ['basic', 'fast', 'fast', 'big', 'fast'] as const
+      };
+    default: // builder (9-12) or unknown: Medium
+      return {
+        spawnInterval: 1000,
+        enemySpeed: { basic: 1.2, fast: 2, big: 0.8 },
+        lives: 3,
+        gameDuration: 60000,
+        enemyTypes: ['basic', 'basic', 'basic', 'fast', 'big'] as const
+      };
+  }
+};
+
+export function SpaceShooterGame({ onGameEnd, onCancel, ageTier }: SpaceShooterGameProps) {
+  const difficulty = getDifficultySettings(ageTier);
+  
   const [score, setScore] = useState(0);
   const [playerX, setPlayerX] = useState(50);
   const [bullets, setBullets] = useState<Bullet[]>([]);
   const [enemies, setEnemies] = useState<Enemy[]>([]);
   const [gameOver, setGameOver] = useState(false);
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState(difficulty.lives);
   const [gameStarted, setGameStarted] = useState(false);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const bulletIdRef = useRef(0);
@@ -80,7 +115,7 @@ export function SpaceShooterGame({ onGameEnd, onCancel }: SpaceShooterGameProps)
     if (!gameStarted || gameOver) return;
 
     const spawnInterval = setInterval(() => {
-      const types: Array<'basic' | 'fast' | 'big'> = ['basic', 'basic', 'basic', 'fast', 'big'];
+      const types = difficulty.enemyTypes;
       const type = types[Math.floor(Math.random() * types.length)];
       
       setEnemies(prev => [...prev, {
@@ -89,10 +124,10 @@ export function SpaceShooterGame({ onGameEnd, onCancel }: SpaceShooterGameProps)
         y: -5,
         type
       }]);
-    }, 1000);
+    }, difficulty.spawnInterval);
 
     return () => clearInterval(spawnInterval);
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, difficulty.spawnInterval, difficulty.enemyTypes]);
 
   // Game loop
   useEffect(() => {
@@ -109,7 +144,7 @@ export function SpaceShooterGame({ onGameEnd, onCancel }: SpaceShooterGameProps)
       setEnemies(prev => {
         const updated = prev.map(e => ({
           ...e,
-          y: e.y + (e.type === 'fast' ? 2 : e.type === 'big' ? 0.8 : 1.2)
+          y: e.y + difficulty.enemySpeed[e.type]
         }));
 
         // Check for enemies reaching bottom
@@ -156,16 +191,16 @@ export function SpaceShooterGame({ onGameEnd, onCancel }: SpaceShooterGameProps)
     return () => clearInterval(gameLoop);
   }, [gameStarted, gameOver]);
 
-  // Auto-end game after 60 seconds
+  // Auto-end game after game duration
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
     const timeout = setTimeout(() => {
       setGameOver(true);
-    }, 60000);
+    }, difficulty.gameDuration);
 
     return () => clearTimeout(timeout);
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, difficulty.gameDuration]);
 
   if (!gameStarted) {
     return (

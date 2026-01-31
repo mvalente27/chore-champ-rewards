@@ -62,6 +62,20 @@ const MiniGames = () => {
   const { user, profile, isParent, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Calculate age tier from profile birth_date
+  const getAgeTier = (): 'explorer' | 'builder' | 'achiever' | null => {
+    if (!profile?.birth_date) return null;
+    const birthDate = new Date(profile.birth_date);
+    const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age >= 5 && age <= 8) return 'explorer';
+    if (age >= 9 && age <= 12) return 'builder';
+    if (age >= 13 && age <= 18) return 'achiever';
+    if (age < 5) return 'explorer';
+    return 'achiever';
+  };
+
+  const ageTier = getAgeTier();
+
   // Redirect if not authenticated or if parent
   useEffect(() => {
     if (!authLoading && !user) {
@@ -193,6 +207,7 @@ const MiniGames = () => {
         <GameComponent 
           onGameEnd={handleGameEnd}
           onCancel={() => setIsPlaying(false)}
+          ageTier={ageTier}
         />
       </div>
     );
@@ -200,6 +215,7 @@ const MiniGames = () => {
 
   const gameInfo = GAMES[todaysGame];
   const bestScore = todaysScores.length > 0 ? Math.max(...todaysScores) : 0;
+  const difficultyLabel = ageTier === 'explorer' ? '🌟 Easy' : ageTier === 'achiever' ? '🔥 Hard' : '⚡ Medium';
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -213,6 +229,9 @@ const MiniGames = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground">Daily Mini Game</h1>
           <p className="text-muted-foreground mt-1">A new game every day!</p>
+          <span className="inline-block mt-2 text-sm px-3 py-1 bg-primary/10 rounded-full text-primary font-medium">
+            Difficulty: {difficultyLabel}
+          </span>
         </div>
 
         {/* Today's Game Card */}

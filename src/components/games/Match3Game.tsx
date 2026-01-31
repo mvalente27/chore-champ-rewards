@@ -1,36 +1,62 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 
+type AgeTier = 'explorer' | 'builder' | 'achiever' | null;
+
 interface Match3GameProps {
   onGameEnd: (score: number) => void;
   onCancel: () => void;
+  ageTier?: AgeTier;
 }
 
 const GEMS = ['💎', '🔮', '💰', '⭐', '🌟', '💫'];
-const GRID_SIZE = 6;
-const GAME_DURATION = 60;
+
+// Difficulty settings based on age tier
+const getDifficultySettings = (ageTier: AgeTier) => {
+  switch (ageTier) {
+    case 'explorer': // 5-8 years: Easier
+      return {
+        gridSize: 5,          // Smaller grid
+        gameDuration: 90,     // More time
+        gemTypes: 4           // Fewer gem types
+      };
+    case 'achiever': // 13-18 years: Harder
+      return {
+        gridSize: 7,          // Larger grid
+        gameDuration: 45,     // Less time
+        gemTypes: 6           // All gem types
+      };
+    default: // builder (9-12) or unknown: Medium
+      return {
+        gridSize: 6,
+        gameDuration: 60,
+        gemTypes: 5
+      };
+  }
+};
 
 type Grid = string[][];
 
-function createGrid(): Grid {
+function createGrid(gridSize: number, gemTypes: number): Grid {
+  const availableGems = GEMS.slice(0, gemTypes);
   const grid: Grid = [];
-  for (let i = 0; i < GRID_SIZE; i++) {
+  for (let i = 0; i < gridSize; i++) {
     grid.push([]);
-    for (let j = 0; j < GRID_SIZE; j++) {
-      grid[i].push(GEMS[Math.floor(Math.random() * GEMS.length)]);
+    for (let j = 0; j < gridSize; j++) {
+      grid[i].push(availableGems[Math.floor(Math.random() * availableGems.length)]);
     }
   }
   // Remove initial matches
-  return removeMatches(grid).grid;
+  return removeMatches(grid, gridSize).grid;
 }
 
-function removeMatches(grid: Grid): { grid: Grid; matchCount: number } {
+function removeMatches(grid: Grid, gridSize: number): { grid: Grid; matchCount: number } {
   let matchCount = 0;
   const newGrid = grid.map(row => [...row]);
   
   // Check horizontal matches
-  for (let i = 0; i < GRID_SIZE; i++) {
-    for (let j = 0; j < GRID_SIZE - 2; j++) {
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize - 2; j++) {
       if (newGrid[i][j] && newGrid[i][j] === newGrid[i][j + 1] && newGrid[i][j] === newGrid[i][j + 2]) {
         matchCount++;
         newGrid[i][j] = '';
@@ -41,8 +67,8 @@ function removeMatches(grid: Grid): { grid: Grid; matchCount: number } {
   }
   
   // Check vertical matches
-  for (let i = 0; i < GRID_SIZE - 2; i++) {
-    for (let j = 0; j < GRID_SIZE; j++) {
+  for (let i = 0; i < gridSize - 2; i++) {
+    for (let j = 0; j < gridSize; j++) {
       if (newGrid[i][j] && newGrid[i][j] === newGrid[i + 1][j] && newGrid[i][j] === newGrid[i + 2][j]) {
         matchCount++;
         newGrid[i][j] = '';
@@ -55,12 +81,14 @@ function removeMatches(grid: Grid): { grid: Grid; matchCount: number } {
   return { grid: newGrid, matchCount };
 }
 
-function dropGems(grid: Grid): Grid {
+function dropGems(grid: Grid, gemTypes: number): Grid {
+  const gridSize = grid.length;
+  const availableGems = GEMS.slice(0, gemTypes);
   const newGrid = grid.map(row => [...row]);
   
-  for (let j = 0; j < GRID_SIZE; j++) {
-    let writePos = GRID_SIZE - 1;
-    for (let i = GRID_SIZE - 1; i >= 0; i--) {
+  for (let j = 0; j < gridSize; j++) {
+    let writePos = gridSize - 1;
+    for (let i = gridSize - 1; i >= 0; i--) {
       if (newGrid[i][j]) {
         newGrid[writePos][j] = newGrid[i][j];
         if (writePos !== i) {
@@ -71,7 +99,7 @@ function dropGems(grid: Grid): Grid {
     }
     // Fill empty spaces
     for (let i = writePos; i >= 0; i--) {
-      newGrid[i][j] = GEMS[Math.floor(Math.random() * GEMS.length)];
+      newGrid[i][j] = availableGems[Math.floor(Math.random() * availableGems.length)];
     }
   }
   
@@ -86,16 +114,18 @@ function swapGems(grid: Grid, r1: number, c1: number, r2: number, c2: number): G
   return newGrid;
 }
 
-function hasMatches(grid: Grid): boolean {
-  const { matchCount } = removeMatches(grid);
+function hasMatches(grid: Grid, gridSize: number): boolean {
+  const { matchCount } = removeMatches(grid, gridSize);
   return matchCount > 0;
 }
 
-export function Match3Game({ onGameEnd, onCancel }: Match3GameProps) {
-  const [grid, setGrid] = useState<Grid>(() => createGrid());
+export function Match3Game({ onGameEnd, onCancel, ageTier }: Match3GameProps) {
+  const difficulty = getDifficultySettings(ageTier);
+  
+  const [grid, setGrid] = useState<Grid>(() => createGrid(difficulty.gridSize, difficulty.gemTypes));
   const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
+  const [timeLeft, setTimeLeft] = useState(difficulty.gameDuration);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [combo, setCombo] = useState(0);
@@ -119,7 +149,7 @@ export function Match3Game({ onGameEnd, onCancel }: Match3GameProps) {
 
   // Process matches
   const processMatches = useCallback((currentGrid: Grid, currentCombo: number = 0) => {
-    const { grid: clearedGrid, matchCount } = removeMatches(currentGrid);
+    const { grid: clearedGrid, matchCount } = removeMatches(currentGrid, difficulty.gridSize);
     
     if (matchCount > 0) {
       const comboMultiplier = 1 + (currentCombo * 0.5);
@@ -129,7 +159,7 @@ export function Match3Game({ onGameEnd, onCancel }: Match3GameProps) {
       
       // Wait, drop, then check again
       setTimeout(() => {
-        const droppedGrid = dropGems(clearedGrid);
+        const droppedGrid = dropGems(clearedGrid, difficulty.gemTypes);
         setGrid(droppedGrid);
         
         setTimeout(() => {
@@ -139,7 +169,7 @@ export function Match3Game({ onGameEnd, onCancel }: Match3GameProps) {
     } else {
       setCombo(0);
     }
-  }, []);
+  }, [difficulty.gridSize, difficulty.gemTypes]);
 
   const handleCellClick = (row: number, col: number) => {
     if (gameOver) return;
@@ -155,7 +185,7 @@ export function Match3Game({ onGameEnd, onCancel }: Match3GameProps) {
       if (isAdjacent) {
         const newGrid = swapGems(grid, selected.row, selected.col, row, col);
         
-        if (hasMatches(newGrid)) {
+        if (hasMatches(newGrid, difficulty.gridSize)) {
           setGrid(newGrid);
           processMatches(newGrid);
         } else {
@@ -179,7 +209,7 @@ export function Match3Game({ onGameEnd, onCancel }: Match3GameProps) {
           Swap adjacent gems to match 3 or more in a row. Chain combos for bonus points!
         </p>
         <div className="text-sm text-muted-foreground">
-          <p>⏱️ 60 seconds | 🔥 Combos = More points!</p>
+          <p>⏱️ {difficulty.gameDuration} seconds | 🔥 Combos = More points!</p>
         </div>
         <Button onClick={() => setGameStarted(true)} size="lg">
           Start Game
@@ -225,7 +255,7 @@ export function Match3Game({ onGameEnd, onCancel }: Match3GameProps) {
         <div 
           className="grid gap-1 p-2 bg-black/20 rounded-xl"
           style={{ 
-            gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+            gridTemplateColumns: `repeat(${difficulty.gridSize}, 1fr)`,
             aspectRatio: '1'
           }}
         >

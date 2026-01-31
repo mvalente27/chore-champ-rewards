@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 
+type AgeTier = 'explorer' | 'builder' | 'achiever' | null;
+
 interface MemoryMatchGameProps {
   onGameEnd: (score: number) => void;
   onCancel: () => void;
+  ageTier?: AgeTier;
 }
 
 interface Card {
@@ -13,7 +16,31 @@ interface Card {
   isMatched: boolean;
 }
 
-const EMOJIS = ['🚀', '🌟', '🎮', '🎯', '🏆', '💎', '🔥', '⚡'];
+const ALL_EMOJIS = ['🚀', '🌟', '🎮', '🎯', '🏆', '💎', '🔥', '⚡', '🎨', '🎪', '🎭', '🎸'];
+
+// Difficulty settings based on age tier
+const getDifficultySettings = (ageTier: AgeTier) => {
+  switch (ageTier) {
+    case 'explorer': // 5-8 years: Easier
+      return {
+        numPairs: 6,          // 12 cards (4x3)
+        columns: 4,
+        cardSize: 'w-16 h-16'
+      };
+    case 'achiever': // 13-18 years: Harder
+      return {
+        numPairs: 12,         // 24 cards (6x4)
+        columns: 6,
+        cardSize: 'w-12 h-12'
+      };
+    default: // builder (9-12) or unknown: Medium
+      return {
+        numPairs: 8,          // 16 cards (4x4)
+        columns: 4,
+        cardSize: 'w-16 h-16'
+      };
+  }
+};
 
 function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];
@@ -24,8 +51,9 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
-function createCards(): Card[] {
-  const pairs = [...EMOJIS, ...EMOJIS];
+function createCards(numPairs: number): Card[] {
+  const emojis = ALL_EMOJIS.slice(0, numPairs);
+  const pairs = [...emojis, ...emojis];
   return shuffleArray(pairs).map((emoji, index) => ({
     id: index,
     emoji,
@@ -34,8 +62,10 @@ function createCards(): Card[] {
   }));
 }
 
-export function MemoryMatchGame({ onGameEnd, onCancel }: MemoryMatchGameProps) {
-  const [cards, setCards] = useState<Card[]>(() => createCards());
+export function MemoryMatchGame({ onGameEnd, onCancel, ageTier }: MemoryMatchGameProps) {
+  const difficulty = getDifficultySettings(ageTier);
+  
+  const [cards, setCards] = useState<Card[]>(() => createCards(difficulty.numPairs));
   const [flippedCards, setFlippedCards] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [matches, setMatches] = useState(0);
@@ -57,10 +87,10 @@ export function MemoryMatchGame({ onGameEnd, onCancel }: MemoryMatchGameProps) {
 
   // Check for game completion
   useEffect(() => {
-    if (matches === EMOJIS.length) {
+    if (matches === difficulty.numPairs) {
       setGameOver(true);
     }
-  }, [matches]);
+  }, [matches, difficulty.numPairs]);
 
   const handleCardClick = useCallback((id: number) => {
     if (isChecking) return;
@@ -162,19 +192,19 @@ export function MemoryMatchGame({ onGameEnd, onCancel }: MemoryMatchGameProps) {
       <div className="flex justify-between items-center mb-4 text-white">
         <div className="text-lg font-bold">⏱️ {timeElapsed}s</div>
         <div className="text-lg font-bold">🎯 Moves: {moves}</div>
-        <div className="text-lg font-bold">✅ {matches}/{EMOJIS.length}</div>
+        <div className="text-lg font-bold">✅ {matches}/{difficulty.numPairs}</div>
       </div>
 
       {/* Card grid */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="grid grid-cols-4 gap-2 p-2">
+        <div className="grid gap-2 p-2" style={{ gridTemplateColumns: `repeat(${difficulty.columns}, 1fr)` }}>
           {cards.map(card => (
             <button
               key={card.id}
               onClick={() => handleCardClick(card.id)}
               disabled={card.isFlipped || card.isMatched || isChecking}
               className={`
-                w-16 h-16 rounded-xl text-3xl flex items-center justify-center
+                ${difficulty.cardSize} rounded-xl text-2xl flex items-center justify-center
                 transition-all duration-300 transform
                 ${card.isFlipped || card.isMatched 
                   ? 'bg-white rotate-0' 
