@@ -2,6 +2,7 @@
 
 export type ProfileType = 'parent' | 'kid';
 export type ChoreStatus = 'available' | 'claimed' | 'pending_verification' | 'completed';
+export type ChoreClaimStatus = 'claimed' | 'pending_verification' | 'completed';
 export type EarningStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Household {
@@ -39,6 +40,18 @@ export interface Chore {
   completed_at: string | null;
 }
 
+export interface ChoreClaim {
+  id: string;
+  chore_id: string;
+  profile_id: string;
+  status: ChoreClaimStatus;
+  claimed_at: string;
+  completed_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+
 export interface Earning {
   id: string;
   profile_id: string;
@@ -53,6 +66,11 @@ export interface Earning {
 // Extended types with relations
 export interface ChoreWithAssignee extends Chore {
   assigned_profile?: Profile;
+}
+
+export interface ChoreClaimWithDetails extends ChoreClaim {
+  chore?: Chore;
+  profile?: Profile;
 }
 
 export interface EarningWithChore extends Earning {

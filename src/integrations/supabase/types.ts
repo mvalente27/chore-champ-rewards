@@ -89,6 +89,64 @@ export type Database = {
         }
         Relationships: []
       }
+      chore_claims: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          chore_id: string
+          claimed_at: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          profile_id: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          chore_id: string
+          claimed_at?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          profile_id: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          chore_id?: string
+          claimed_at?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_claims_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_claims_chore_id_fkey"
+            columns: ["chore_id"]
+            isOneToOne: false
+            referencedRelation: "chores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_claims_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chores: {
         Row: {
           assigned_to: string | null
