@@ -125,31 +125,19 @@ const Approvals = () => {
 
       if (claimError) throw claimError;
 
-      // Create earning record with pending status first
-      const { data: earningData, error: earningInsertError } = await supabase
+      // Create earning record directly as approved - trigger will update total_earnings
+      const { error: earningError } = await supabase
         .from('earnings')
         .insert({
           profile_id: claim.profile_id,
           chore_id: claim.chore_id,
           amount: claim.chore.reward_value,
-          status: 'pending'
-        })
-        .select('id')
-        .single();
-
-      if (earningInsertError) throw earningInsertError;
-
-      // Update to approved to trigger the total_earnings update
-      const { error: earningUpdateError } = await supabase
-        .from('earnings')
-        .update({
           status: 'approved',
           approved_by: profile.id,
           approved_at: new Date().toISOString()
-        })
-        .eq('id', earningData.id);
+        });
 
-      if (earningUpdateError) throw earningUpdateError;
+      if (earningError) throw earningError;
 
       // Award XP and check for badges
       const gamificationResult = await awardXPForChore(claim.profile_id);
