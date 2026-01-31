@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
 import { Chore, Profile } from '@/types/database';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -79,14 +79,18 @@ const Approvals = () => {
     return kid?.avatar_url || '👧';
   };
 
-  const handleApprove = async (chore: Chore) => {
+  const handleApprove = async (chore: Chore, resetForReuse: boolean = false) => {
     if (!profile || !chore.assigned_to) return;
 
     try {
-      // Update chore status
+      // Update chore status - either completed or reset to available
       const { error: choreError } = await supabase
         .from('chores')
-        .update({ status: 'completed' })
+        .update({ 
+          status: resetForReuse ? 'available' : 'completed',
+          assigned_to: resetForReuse ? null : chore.assigned_to,
+          completed_at: resetForReuse ? null : chore.completed_at
+        })
         .eq('id', chore.id);
 
       if (choreError) throw choreError;
@@ -135,7 +139,8 @@ const Approvals = () => {
       const xpMessage = gamificationResult.xpAwarded > 0 
         ? ` (+${gamificationResult.xpAwarded} XP)` 
         : '';
-      toast.success(`Approved! +${chore.reward_value} Quest Coins${xpMessage} for ${getKidName(chore.assigned_to)} 🪙`);
+      const resetMessage = resetForReuse ? ' (Chore reset for next time!)' : '';
+      toast.success(`Approved! +${chore.reward_value} Quest Coins${xpMessage} for ${getKidName(chore.assigned_to)} 🪙${resetMessage}`);
     } catch (err) {
       console.error('Error approving chore:', err);
       toast.error('Failed to approve chore');
@@ -223,22 +228,37 @@ const Approvals = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => handleReject(chore)}
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Try Again
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={() => handleApprove(chore)}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleReject(chore)}
+                    >
+                      <XCircle className="w-4 h-4 mr-1" />
+                      Try Again
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleApprove(chore, false)}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      Approve & Done
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleApprove(chore, true)}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Approve & Reset
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
