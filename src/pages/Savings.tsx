@@ -210,6 +210,8 @@ export default function Savings() {
         <Header 
           userName={profile?.name || ''} 
           userAvatar={profile?.avatar_url || '👨‍👩‍👧'} 
+          totalCoins={profile?.total_earnings}
+          profileId={profile?.id}
         />
         <main className="max-w-md mx-auto px-4 py-6">
           <div className="text-center py-16 bg-muted/30 rounded-xl">
@@ -233,6 +235,8 @@ export default function Savings() {
       <Header 
         userName={profile?.name || ''} 
         userAvatar={profile?.avatar_url || '👧'} 
+        totalCoins={profile?.total_earnings}
+        profileId={profile?.id}
       />
       
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">

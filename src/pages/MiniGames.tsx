@@ -59,7 +59,7 @@ const MiniGames = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [todaysScores, setTodaysScores] = useState<number[]>([]);
 
-  const { user, profile, isParent, isLoading: authLoading } = useAuth();
+  const { user, profile, isParent, isLoading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   // Calculate age tier from profile birth_date
@@ -162,6 +162,9 @@ const MiniGames = () => {
       setRemainingPlays(result.remaining_plays);
       setTodaysScores(prev => [score, ...prev]);
       setIsPlaying(false);
+      
+      // Refresh profile to update coin balance in Header and elsewhere
+      await refreshProfile();
     } catch (err: any) {
       console.error('Error recording game play:', err);
       if (err.message?.includes('No remaining plays')) {
@@ -222,6 +225,8 @@ const MiniGames = () => {
       <Header 
         userName={profile?.name || ''} 
         userAvatar={profile?.avatar_url || '👧'} 
+        totalCoins={profile?.total_earnings}
+        profileId={profile?.id}
       />
       
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
