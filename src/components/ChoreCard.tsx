@@ -1,9 +1,19 @@
 import { Chore } from '@/types/chores';
 import { ChoreStatus } from '@/types/database';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Tv, Users, Cookie, Sparkles, Check, Clock, CheckCircle2, Pencil } from 'lucide-react';
+import { DollarSign, Tv, Users, Cookie, Sparkles, Check, Clock, CheckCircle2, Pencil, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Helper to safely display icon - returns fallback if it looks like JSON
+const getSafeIcon = (icon: string | null | undefined): string => {
+  if (!icon) return '📋';
+  // Check if it looks like JSON (starts with { or [)
+  const trimmed = icon.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    return '📋';
+  }
+  return icon;
+};
 interface ChoreCardProps {
   chore: Chore;
   onClaim: (id: string) => void;
@@ -62,7 +72,7 @@ export function ChoreCard({
       )}
     >
       <div className="flex items-start gap-4">
-        <div className="text-4xl">{chore.icon}</div>
+        <div className="text-4xl">{getSafeIcon(chore.icon)}</div>
         
         {/* Edit button for parents */}
         {!isKidView && onEdit && choreStatus !== 'completed' && (

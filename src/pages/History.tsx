@@ -10,6 +10,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, startOfMonth, startOfYear, isAfter } from 'date-fns';
 import { SmartAvatar } from '@/components/avatar';
 
+// Helper to safely display icon - returns fallback if it looks like JSON
+const getSafeIcon = (icon: string | null | undefined): string => {
+  if (!icon) return '📋';
+  const trimmed = icon.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    return '📋';
+  }
+  return icon;
+};
+
 interface HistoryItem {
   id: string;
   type: 'chore' | 'reward';
@@ -241,7 +251,7 @@ const History = () => {
                   className="bg-card border rounded-lg p-3 flex items-center gap-3"
                 >
                   <div className="w-10 h-10 bg-muted/50 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
-                    {item.icon}
+                    {getSafeIcon(item.icon)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground text-sm truncate">{item.title}</p>
