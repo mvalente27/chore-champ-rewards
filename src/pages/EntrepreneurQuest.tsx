@@ -84,9 +84,9 @@ export default function EntrepreneurQuest() {
   };
 
   const getPlayerLevel = () => {
-    // Level up based on total businesses owned and their levels
-    const totalBusinessLevels = ownedBusinesses.reduce((sum, b) => sum + b.level, 0);
-    return Math.max(1, Math.floor(totalBusinessLevels / 2) + 1);
+    // Use the profile's actual level for unlocking businesses
+    // This ensures kids can buy businesses if they've leveled up through chores/quizzes
+    return profile?.level || 1;
   };
 
   const getBusinessCost = (business: Business, currentLevel: number = 0) => {
