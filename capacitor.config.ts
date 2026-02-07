@@ -5,10 +5,8 @@ const config: CapacitorConfig = {
   appId: 'com.lovable.chorequest',
   appName: 'ChoreQuest',
   webDir: 'dist',
-  server: {
-    url: 'https://063c78be-35aa-476f-8604-5287f25be1f2.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  }
+  // Remove server.url to load from bundled assets in production
+  // The app will use the compiled web assets from the dist folder
 };
 
 export default config;
