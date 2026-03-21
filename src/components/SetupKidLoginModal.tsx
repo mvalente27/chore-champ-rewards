@@ -80,9 +80,10 @@ export function SetupKidLoginModal({ open, onClose, kid, onSuccess }: SetupKidLo
       );
       onSuccess();
       handleClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating kid login:', err);
-      toast.error(err.message || 'Failed to create login credentials');
+      const message = err instanceof Error ? err.message : 'Failed to create login credentials';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

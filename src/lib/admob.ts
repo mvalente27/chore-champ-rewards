@@ -126,40 +126,55 @@ export async function showRewardedAd(): Promise<AdMobRewardItem | null> {
     await initializeAdMob();
   }
 
-  return new Promise(async (resolve) => {
-    try {
-      // Listen for reward event
-      const rewardListener = await AdMob.addListener(
-        RewardAdPluginEvents.Rewarded,
-        (reward: AdMobRewardItem) => {
-          console.log('User earned reward:', reward);
-          rewardListener.remove();
-          resolve(reward);
-        }
-      );
+  return new Promise((resolve) => {
+    void (async () => {
+      let settled = false;
+      let rewardListener: { remove: () => Promise<void> } | null = null;
+      let dismissListener: { remove: () => Promise<void> } | null = null;
 
-      // Listen for ad dismissal without reward
-      const dismissListener = await AdMob.addListener(
-        RewardAdPluginEvents.Dismissed,
-        () => {
-          console.log('Rewarded ad dismissed');
-          dismissListener.remove();
-        }
-      );
+      const settle = async (reward: AdMobRewardItem | null) => {
+        if (settled) return;
+        settled = true;
+        await Promise.allSettled([
+          rewardListener?.remove() ?? Promise.resolve(),
+          dismissListener?.remove() ?? Promise.resolve(),
+        ]);
+        resolve(reward);
+      };
 
-      // Prepare the ad
-      await AdMob.prepareRewardVideoAd({
-        adId: adUnitIds.rewarded,
-        isTesting: false,
-      });
+      try {
+        // Listen for reward event
+        rewardListener = await AdMob.addListener(
+          RewardAdPluginEvents.Rewarded,
+          (reward: AdMobRewardItem) => {
+            console.log('User earned reward:', reward);
+            void settle(reward);
+          }
+        );
 
-      // Show the ad
-      await AdMob.showRewardVideoAd();
-      console.log('Rewarded ad shown');
-    } catch (error) {
-      console.error('Failed to show rewarded ad:', error);
-      resolve(null);
-    }
+        // Listen for ad dismissal without reward
+        dismissListener = await AdMob.addListener(
+          RewardAdPluginEvents.Dismissed,
+          () => {
+            console.log('Rewarded ad dismissed');
+            void settle(null);
+          }
+        );
+
+        // Prepare the ad
+        await AdMob.prepareRewardVideoAd({
+          adId: adUnitIds.rewarded,
+          isTesting: false,
+        });
+
+        // Show the ad
+        await AdMob.showRewardVideoAd();
+        console.log('Rewarded ad shown');
+      } catch (error) {
+        console.error('Failed to show rewarded ad:', error);
+        await settle(null);
+      }
+    })();
   });
 }
 
@@ -168,6 +183,12 @@ export async function showRewardedAd(): Promise<AdMobRewardItem | null> {
  */
 export function isAdMobSupported(): boolean {
   // Check if we're in a Capacitor native context
-  return typeof (window as any).Capacitor !== 'undefined' && 
-         (window as any).Capacitor.isNativePlatform();
+  type CapacitorWindow = Window & {
+    Capacitor?: {
+      isNativePlatform?: () => boolean;
+    };
+  };
+
+  const capacitorWindow = window as CapacitorWindow;
+  return capacitorWindow.Capacitor?.isNativePlatform?.() === true;
 }

@@ -17,6 +17,29 @@ interface QuizPerformance {
   };
 }
 
+interface GeneratedQuestion {
+  question: string;
+  options: string[];
+  correct_answer: number;
+  category?: string;
+  difficulty?: string;
+}
+
+function isGeneratedQuestion(value: unknown): value is GeneratedQuestion {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.question === "string" &&
+    Array.isArray(candidate.options) &&
+    candidate.options.every((option) => typeof option === "string") &&
+    candidate.options.length === 4 &&
+    typeof candidate.correct_answer === "number" &&
+    candidate.correct_answer >= 0 &&
+    candidate.correct_answer <= 3
+  );
+}
+
 function determineDifficulty(performance: QuizPerformance): string {
   const { accuracyRate, difficultyBreakdown } = performance;
   
@@ -247,24 +270,23 @@ Make sure questions are different from these existing ones: ${existingQuestionTe
     }
 
     // Parse the JSON from AI response
-    let questions;
+    let questions: GeneratedQuestion[];
     try {
       // Clean up the response - remove markdown code blocks if present
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      questions = JSON.parse(cleanContent);
+      const parsedQuestions: unknown = JSON.parse(cleanContent);
+      if (!Array.isArray(parsedQuestions)) {
+        throw new Error("AI response is not an array");
+      }
+      questions = parsedQuestions.filter(isGeneratedQuestion);
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
       throw new Error("Invalid AI response format");
     }
 
     // Validate and insert questions
-    const validQuestions = questions.filter((q: any) => 
+    const validQuestions = questions.filter((q) => 
       q.question && 
-      Array.isArray(q.options) && 
-      q.options.length === 4 &&
-      typeof q.correct_answer === 'number' &&
-      q.correct_answer >= 0 && 
-      q.correct_answer <= 3 &&
       !existingQuestionTexts.includes(q.question.toLowerCase())
     );
 
@@ -276,7 +298,7 @@ Make sure questions are different from these existing ones: ${existingQuestionTe
     }
 
     // Insert new questions with age tier
-    const questionsToInsert = validQuestions.map((q: any) => ({
+    const questionsToInsert = validQuestions.map((q) => ({
       question: q.question,
       options: q.options,
       correct_answer: q.correct_answer,

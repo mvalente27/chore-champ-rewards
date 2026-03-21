@@ -48,7 +48,7 @@ export function useStreak(profileId: string | undefined) {
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
       let currentStreak = 0;
-      let checkDate = sortedDays[0] === today || sortedDays[0] === yesterday 
+      const checkDate = sortedDays[0] === today || sortedDays[0] === yesterday 
         ? new Date(sortedDays[0]) 
         : null;
 

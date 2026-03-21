@@ -54,9 +54,10 @@ export function ResetKidPasswordModal({ open, onClose, kid, onSuccess }: ResetKi
       toast.success(`Password updated for ${kid.name}!`);
       onSuccess();
       handleClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating kid password:', err);
-      toast.error(err.message || 'Failed to update password');
+      const message = err instanceof Error ? err.message : 'Failed to update password';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

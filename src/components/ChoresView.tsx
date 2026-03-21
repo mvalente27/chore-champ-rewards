@@ -109,7 +109,7 @@ export function ChoresView({
                       <div className="flex-1">
                         <h4 className="font-semibold text-foreground">{chore.title}</h4>
                         <p className="text-sm text-destructive mt-1">
-                          {(claim as any).denial_reason || 'This chore was not approved'}
+                          {claim.denial_reason || 'This chore was not approved'}
                         </p>
                       </div>
                     </div>

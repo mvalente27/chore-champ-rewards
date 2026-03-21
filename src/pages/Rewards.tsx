@@ -31,7 +31,7 @@ const Rewards = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
 
-  const { user, profile, isParent, isLoading: authLoading } = useAuth();
+  const { user, profile, isParent, isLoading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if not logged in
@@ -112,7 +112,7 @@ const Rewards = () => {
     if (!profile || isParent) return;
 
     if (profile.total_earnings < reward.cost) {
-      toast.error(`Not enough earnings! You need $${(reward.cost - profile.total_earnings).toFixed(2)} more.`);
+      toast.error(`Not enough earnings! You need ${(reward.cost - profile.total_earnings).toFixed(2)} more coins.`);
       return;
     }
 
@@ -135,11 +135,13 @@ const Rewards = () => {
         </div>
       );
 
-      // Refresh to update earnings display
-      window.location.reload();
-    } catch (err: any) {
+      // Refresh profile and list to reflect the new balance and redemption state.
+      await refreshProfile();
+      await fetchRewards();
+    } catch (err: unknown) {
       console.error('Error redeeming reward:', err);
-      if (err.message?.includes('insufficient_funds')) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('insufficient_funds')) {
         toast.error('Not enough earnings for this reward');
       } else {
         toast.error('Failed to redeem reward');

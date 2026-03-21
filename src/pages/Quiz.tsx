@@ -240,11 +240,12 @@ const Quiz = () => {
       } else {
         toast.info('No new questions available right now. Try again later!');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error generating questions:', err);
-      if (err.message?.includes('429') || err.message?.includes('rate limit')) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('429') || message.includes('rate limit')) {
         toast.error('Too many requests. Please wait a moment.');
-      } else if (err.message?.includes('402')) {
+      } else if (message.includes('402')) {
         toast.error('AI service temporarily unavailable.');
       } else {
         toast.error('Failed to generate new questions');

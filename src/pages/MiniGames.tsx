@@ -165,9 +165,10 @@ const MiniGames = () => {
       
       // Refresh profile to update coin balance in Header and elsewhere
       await refreshProfile();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error recording game play:', err);
-      if (err.message?.includes('No remaining plays')) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('No remaining plays')) {
         toast.error("No plays left today! Come back tomorrow.");
       } else {
         toast.error('Failed to record game. Try again!');
